@@ -23,7 +23,7 @@ pipeline {
         }
         stage('Build Images') {
             steps {
-                sh 'docker-compose build'
+                sh 'docker compose build'
             }
         }
         stage('Push Images') {
@@ -32,14 +32,14 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                     sh '''
                       docker login -u $USER -p $PASS
-                      docker-compose push
+                      docker compose push
                     '''
                 }
             }
         }
         stage('Compose Up') {
             steps {
-                sh 'docker-compose up -d'
+                sh 'docker compose up -d'
             }
         }
         stage('Test Services') {
