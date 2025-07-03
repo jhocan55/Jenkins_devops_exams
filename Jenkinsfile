@@ -38,7 +38,15 @@ pipeline {
         }
         stage('Compose Up') {
             steps {
-                sh 'docker compose up -d'
+                // disable host‐path binds (workspace is read-only) by overriding volumes
+                writeFile file: 'jenkins.override.yml', text: '''
+services:
+  movie_service:
+    volumes: []
+  cast_service:
+    volumes: []
+'''
+                sh 'docker compose -f docker-compose.yml -f jenkins.override.yml up -d'
             }
         }
         stage('Test Services') {
