@@ -10,7 +10,7 @@ pipeline {
                 // explicitly fetch the main branch from the same repo
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[ name: '*/master' ]],
+                    branches: [[ name: '*/main' ]],
                     userRemoteConfigs: scm.userRemoteConfigs
                 ])
             }
