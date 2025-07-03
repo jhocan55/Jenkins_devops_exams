@@ -1,19 +1,39 @@
 pipeline {
     environment {
         DOCKER_ID    = "jhocan55"
-        DOCKER_IMAGE = "jenkinsappexam"
         DOCKER_TAG   = "v.${BUILD_ID}.0"
+        MOVIE_IMAGE  = "${DOCKER_ID}/movie_service:${DOCKER_TAG}"
+        CAST_IMAGE   = "${DOCKER_ID}/cast_service:${DOCKER_TAG}"
     }
     agent any
 
     stages {
-        stage('Docker Build') {
+        stage('Docker Compose Build') {
             steps {
                 script {
                     sh '''
                     docker rm -f jenkins || true
-                    docker build -t $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG .
+                    docker compose build
                     '''
+                }
+            }
+        }
+
+        stage('Tag Built Images') {
+            steps {
+                script {
+                    // Get image IDs and tag manually
+                    def movieImageId = sh(script: "docker images -q movie_service", returnStdout: true).trim()
+                    def castImageId  = sh(script: "docker images -q cast_service", returnStdout: true).trim()
+
+                    if (!movieImageId || !castImageId) {
+                        error "Could not find built images for movie_service or cast_service"
+                    }
+
+                    sh """
+                    docker tag ${movieImageId} ${MOVIE_IMAGE}
+                    docker tag ${castImageId} ${CAST_IMAGE}
+                    """
                 }
             }
         }
@@ -22,8 +42,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker rm -f jenkins || true
-                    docker run -d -p 8080:8080 --name jenkins $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG
+                    docker compose up -d
                     sleep 10
                     '''
                 }
@@ -49,7 +68,8 @@ pipeline {
                 script {
                     sh '''
                     docker login -u $DOCKER_ID -p $DOCKER_PASS
-                    docker push $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG
+                    docker push $MOVIE_IMAGE
+                    docker push $CAST_IMAGE
                     '''
                 }
             }
