@@ -20,11 +20,20 @@ pipeline {
         stage('Docker run'){ // run containers via compose
             steps {
                 script {
-                sh '''
-                 docker rm -f jenkins || true
-                 docker compose up -d
-                 sleep 10
-                '''
+                    sh '''
+                     docker rm -f jenkins || true
+                    '''
+                    writeFile file: 'jenkins.override.yml', text: '''
+services:
+  movie_service:
+    volumes: []
+  cast_service:
+    volumes: []
+'''
+                    sh '''
+                      docker compose -f docker-compose.yml -f jenkins.override.yml up -d
+                      sleep 10
+                    '''
                 }
             }
         }
