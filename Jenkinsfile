@@ -86,7 +86,10 @@ pipeline {
     }
     post {
         failure {
-            // ...existing code...
+            echo "This will run if the job failed"
+            mail to: "jhon.castaneda.angulo@gmail.com",
+                 subject: "${env.JOB_NAME} - Build # ${env.BUILD_ID} has failed",
+                 body: "For more info on the pipeline failure, check out the console output at ${env.JOB_URL}"
         }
     }
 }
