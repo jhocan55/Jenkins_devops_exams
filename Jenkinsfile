@@ -11,7 +11,8 @@ pipeline {
         stage('Docker Compose Build') {
             steps {
                 script {
-                    sh '''                
+                    sh '''
+                    docker rm -f jenkins || true
                     docker compose build
                     '''
                 }
@@ -21,8 +22,8 @@ pipeline {
         stage('Tag Built Images') {
             steps {
                 script {
-                    def movieImageId = sh(script: "docker images -q datascientest-ci-cd-exam_movie_service", returnStdout: true).trim()
-                    def castImageId  = sh(script: "docker images -q datascientest-ci-cd-exam_cast_service", returnStdout: true).trim()
+                    def movieImageId = sh(script: "docker images -q datascientest-ci-cd-exam-movie_service", returnStdout: true).trim()
+                    def castImageId  = sh(script: "docker images -q datascientest-ci-cd-exam-cast_service", returnStdout: true).trim()
 
                     if (!movieImageId || !castImageId) {
                         error "Could not find built images for movie_service or cast_service"
