@@ -22,9 +22,8 @@ pipeline {
         stage('Tag Built Images') {
             steps {
                 script {
-                    // Get image IDs and tag manually
-                    def movieImageId = sh(script: "docker images -q movie_service", returnStdout: true).trim()
-                    def castImageId  = sh(script: "docker images -q cast_service", returnStdout: true).trim()
+                    def movieImageId = sh(script: "docker images -q datascientest-ci-cd-exam_movie_service", returnStdout: true).trim()
+                    def castImageId  = sh(script: "docker images -q datascientest-ci-cd-exam_cast_service", returnStdout: true).trim()
 
                     if (!movieImageId || !castImageId) {
                         error "Could not find built images for movie_service or cast_service"
