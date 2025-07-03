@@ -1,10 +1,8 @@
 pipeline {
     agent any
     environment {
-        DOCKER_ID       = "jhocan55"
-        DOCKER_TAG      = "v.${BUILD_ID}.0"
-        MOVIE_IMAGE     = "${DOCKER_ID}/movie_service"
-        CAST_IMAGE      = "${DOCKER_ID}/cast_service"
+        DOCKER_ID  = "jhocan55"
+        DOCKER_TAG = "v.${BUILD_ID}.0"
     }
     options {
         // skip the automatic, job‐configured checkout
@@ -28,13 +26,14 @@ pipeline {
         }
         stage('Push Images') {
             when { branch 'main' }
+            environment {
+                DOCKER_PASS = credentials("DOCKER_HUB_PASS")
+            }
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    sh '''
-                      docker login -u $USER -p $PASS
-                      docker compose push
-                    '''
-                }
+                sh '''
+                  docker login -u ${DOCKER_ID} -p ${DOCKER_PASS}
+                  docker compose push
+                '''
             }
         }
         stage('Compose Up') {
@@ -51,34 +50,43 @@ pipeline {
             }
         }
         stage('Deploy to Dev') {
-            environment { KUBECONFIG = credentials('kubeconfig-dev') }
+            environment {
+                KUBECONFIG = credentials("config")
+            }
             steps {
                 sh '''
-                  cp charts/values.yaml values-dev.yaml
-                  sed -i "s+tag:.*+tag: ${DOCKER_TAG}+g" values-dev.yaml
+                  mkdir -p $WORKSPACE/.kube
+                  cp ${KUBECONFIG} $WORKSPACE/.kube/config
+                  sed -e "s+tag:.*+tag: ${DOCKER_TAG}+g" charts/values.yaml > values-dev.yaml
                   helm upgrade --install fastapiapp charts --namespace dev -f values-dev.yaml
                 '''
             }
         }
         stage('Deploy to Staging') {
-            environment { KUBECONFIG = credentials('kubeconfig-staging') }
+            environment {
+                KUBECONFIG = credentials("config")
+            }
             steps {
                 sh '''
-                  cp charts/values.yaml values-staging.yaml
-                  sed -i "s+tag:.*+tag: ${DOCKER_TAG}+g" values-staging.yaml
+                  mkdir -p $WORKSPACE/.kube
+                  cp ${KUBECONFIG} $WORKSPACE/.kube/config
+                  sed -e "s+tag:.*+tag: ${DOCKER_TAG}+g" charts/values.yaml > values-staging.yaml
                   helm upgrade --install fastapiapp charts --namespace staging -f values-staging.yaml
                 '''
             }
         }
         stage('Deploy to Prod') {
-            environment { KUBECONFIG = credentials('kubeconfig-prod') }
+            environment {
+                KUBECONFIG = credentials("config")
+            }
             steps {
                 timeout(time: 15, unit: 'MINUTES') {
                     input message: 'Approve Prod Deployment?', ok: 'Yes'
                 }
                 sh '''
-                  cp charts/values.yaml values-prod.yaml
-                  sed -i "s+tag:.*+tag: ${DOCKER_TAG}+g" values-prod.yaml
+                  mkdir -p $WORKSPACE/.kube
+                  cp ${KUBECONFIG} $WORKSPACE/.kube/config
+                  sed -e "s+tag:.*+tag: ${DOCKER_TAG}+g" charts/values.yaml > values-prod.yaml
                   helm upgrade --install fastapiapp charts --namespace prod -f values-prod.yaml
                 '''
             }
