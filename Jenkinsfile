@@ -1,113 +1,111 @@
 pipeline {
-    agent any
-    environment {
-        DOCKER_ID  = "jhocan55"
-        DOCKER_TAG = "v.${BUILD_ID}.0"
+    environment { // Declaration of environment variables
+        DOCKER_ID    = "jhocan55"
+        DOCKER_IMAGE = "jenkinsappexam"
+        DOCKER_TAG   = "v.${BUILD_ID}.0"
     }
-    options {
-        // skip the automatic, job‐configured checkout
-        skipDefaultCheckout()
-    }
+    agent any // Jenkins will be able to select all available agents
     stages {
-        stage("Checkout") {
+        stage(' Docker Build'){ // docker build image stage
             steps {
-                // explicitly fetch the main branch from the same repo
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[ name: '*/master' ]],
-                    userRemoteConfigs: scm.userRemoteConfigs
-                ])
+                script {
+                sh '''
+                 docker rm -f jenkins || true
+                 docker compose build
+                 sleep 6
+                '''
+                }
             }
         }
-        stage('Build Images') {
+        stage('Docker run'){ // run containers via compose
             steps {
-                sh 'docker compose build'
+                script {
+                sh '''
+                 docker rm -f jenkins || true
+                 docker compose up -d
+                 sleep 10
+                '''
+                }
             }
         }
-        stage('Push Images') {
-            when { branch 'main' }
+        stage('Test Acceptance'){ // validate the endpoints
+            steps {
+                script {
+                sh '''
+                 curl -f http://localhost:8080/api/v1/movies
+                 curl -f http://localhost:8080/api/v1/casts
+                '''
+                }
+            }
+        }
+        stage('Docker Push'){ // push images to Docker Hub
             environment {
                 DOCKER_PASS = credentials("DOCKER_HUB_PASS")
             }
             steps {
+                script {
                 sh '''
-                  docker login -u ${DOCKER_ID} -p ${DOCKER_PASS}
-                  docker compose push
+                 docker login -u $DOCKER_ID -p $DOCKER_PASS
+                 docker compose push
                 '''
-            }
-        }
-        stage('Compose Up') {
-            steps {
-                sh '''
-                  # make a transient copy
-                  cp docker-compose.yml tmp-compose.yml
-                  # drop "volumes:" lines
-                  sed -i "/^[[:space:]]*volumes:/d" tmp-compose.yml
-                  # drop the following mount entries (./movie-service and ./cast-service)
-                  sed -i "/-[[:space:]]*\\.\\/movie-service\\//d" tmp-compose.yml
-                  sed -i "/-[[:space:]]*\\.\\/cast-service\\//d" tmp-compose.yml
-                  # bring it up without read-only errors
-                  docker compose -f tmp-compose.yml up -d
-                '''
-            }
-        }
-        stage('Test Services') {
-            steps {
-                sh '''
-                  curl -f http://localhost:8080/api/v1/movies
-                  curl -f http://localhost:8080/api/v1/casts
-                '''
-            }
-        }
-        stage('Deploy to Dev') {
-            environment {
-                KUBECONFIG = credentials("config")
-            }
-            steps {
-                sh '''
-                  mkdir -p $WORKSPACE/.kube
-                  cp ${KUBECONFIG} $WORKSPACE/.kube/config
-                  sed -e "s+tag:.*+tag: ${DOCKER_TAG}+g" charts/values.yaml > values-dev.yaml
-                  helm upgrade --install fastapiapp charts --namespace dev -f values-dev.yaml
-                '''
-            }
-        }
-        stage('Deploy to Staging') {
-            environment {
-                KUBECONFIG = credentials("config")
-            }
-            steps {
-                sh '''
-                  mkdir -p $WORKSPACE/.kube
-                  cp ${KUBECONFIG} $WORKSPACE/.kube/config
-                  sed -e "s+tag:.*+tag: ${DOCKER_TAG}+g" charts/values.yaml > values-staging.yaml
-                  helm upgrade --install fastapiapp charts --namespace staging -f values-staging.yaml
-                '''
-            }
-        }
-        stage('Deploy to Prod') {
-            environment {
-                KUBECONFIG = credentials("config")
-            }
-            steps {
-                timeout(time: 15, unit: 'MINUTES') {
-                    input message: 'Approve Prod Deployment?', ok: 'Yes'
                 }
+            }
+        }
+        stage('Deploiement en dev'){
+            environment {
+                KUBECONFIG = credentials("config")
+            }
+            steps {
+                script {
                 sh '''
-                  mkdir -p $WORKSPACE/.kube
-                  cp ${KUBECONFIG} $WORKSPACE/.kube/config
-                  sed -e "s+tag:.*+tag: ${DOCKER_TAG}+g" charts/values.yaml > values-prod.yaml
-                  helm upgrade --install fastapiapp charts --namespace prod -f values-prod.yaml
+                 rm -rf .kube && mkdir .kube
+                 cp ${KUBECONFIG} .kube/config
+                 sed -e "s+tag:.*+tag: ${DOCKER_TAG}+g" charts/values.yaml > values.yaml
+                 helm upgrade --install app charts --namespace dev -f values.yaml
                 '''
+                }
+            }
+        }
+        stage('Deploiement en staging'){
+            environment {
+                KUBECONFIG = credentials("config")
+            }
+            steps {
+                script {
+                sh '''
+                 rm -rf .kube && mkdir .kube
+                 cp ${KUBECONFIG} .kube/config
+                 sed -e "s+tag:.*+tag: ${DOCKER_TAG}+g" charts/values.yaml > values.yaml
+                 helm upgrade --install app charts --namespace staging -f values.yaml
+                '''
+                }
+            }
+        }
+        stage('Deploiement en prod'){
+            environment {
+                KUBECONFIG = credentials("config")
+            }
+            steps {
+                timeout(time: 15, unit: "MINUTES") {
+                    input message: 'Do you want to deploy in production ?', ok: 'Yes'
+                }
+                script {
+                sh '''
+                 rm -rf .kube && mkdir .kube
+                 cp ${KUBECONFIG} .kube/config
+                 sed -e "s+tag:.*+tag: ${DOCKER_TAG}+g" charts/values.yaml > values.yaml
+                 helm upgrade --install app charts --namespace prod -f values.yaml
+                '''
+                }
             }
         }
     }
-    post {
+    post { // send email when the job has failed
         failure {
             echo "This will run if the job failed"
             mail to: "jhon.castaneda.angulo@gmail.com",
                  subject: "${env.JOB_NAME} - Build # ${env.BUILD_ID} has failed",
-                 body: "For more info on the pipeline failure, check out the console output at ${env.JOB_URL}"
+                 body: "For more info on the pipeline failure, check out the console output at ${env.BUILD_URL}"
         }
     }
 }
