@@ -1,96 +1,91 @@
 pipeline {
-    environment { // Declaration of environment variables
+    environment {
         DOCKER_ID    = "jhocan55"
         DOCKER_IMAGE = "jenkinsappexam"
         DOCKER_TAG   = "v.${BUILD_ID}.0"
     }
-    agent any // Jenkins will be able to select all available agents
+    agent any
+
     stages {
-        stage(' Docker Build'){ // docker build image stage
-            steps {
-                script {
-                sh '''
-                 docker rm -f jenkins || true
-                 docker compose build
-                 sleep 6
-                '''
-                }
-            }
-        }
-        stage('Docker run'){ // run containers via compose
+        stage('Docker Build') {
             steps {
                 script {
                     sh '''
-                     docker rm -f jenkins || true
-                    '''
-                    writeFile file: 'jenkins.override.yml', text: '''
-services:
-  movie_service:
-    volumes: []
-  cast_service:
-    volumes: []
-'''
-                    sh '''
-                      docker compose -f docker-compose.yml -f jenkins.override.yml up -d
-                      sleep 10
+                    docker rm -f jenkins || true
+                    docker build -t $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG .
                     '''
                 }
             }
         }
-        stage('Test Acceptance'){ // validate the endpoints
+
+        stage('Docker Run') {
             steps {
                 script {
-                sh '''
-                 curl -f http://localhost:8080/api/v1/movies
-                 curl -f http://localhost:8080/api/v1/casts
-                '''
+                    sh '''
+                    docker rm -f jenkins || true
+                    docker run -d -p 8080:8080 --name jenkins $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG
+                    sleep 10
+                    '''
                 }
             }
         }
-        stage('Docker Push'){ // push images to Docker Hub
+
+        stage('Test Acceptance') {
+            steps {
+                script {
+                    sh '''
+                    curl -f http://localhost:8080/api/v1/movies
+                    curl -f http://localhost:8080/api/v1/casts
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Push') {
             environment {
                 DOCKER_PASS = credentials("DOCKER_HUB_PASS")
             }
             steps {
                 script {
-                sh '''
-                 docker login -u $DOCKER_ID -p $DOCKER_PASS
-                 docker compose push
-                '''
+                    sh '''
+                    docker login -u $DOCKER_ID -p $DOCKER_PASS
+                    docker push $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG
+                    '''
                 }
             }
         }
-        stage('Deploiement en dev'){
+
+        stage('Déploiement en dev') {
             environment {
                 KUBECONFIG = credentials("config")
             }
             steps {
                 script {
-                sh '''
-                 rm -rf .kube && mkdir .kube
-                 cp ${KUBECONFIG} .kube/config
-                 sed -e "s+tag:.*+tag: ${DOCKER_TAG}+g" charts/values.yaml > values.yaml
-                 helm upgrade --install app charts --namespace dev -f values.yaml
-                '''
+                    writeFile file: '.kube/config', text: "${KUBECONFIG}"
+                    sh '''
+                    sed -e "s+tag:.*+tag: \\\"${DOCKER_TAG}\\\"+g" charts/values.yaml > values.yaml
+                    helm upgrade --install app charts --namespace dev -f values.yaml
+                    '''
                 }
             }
         }
-        stage('Deploiement en staging'){
+
+        stage('Déploiement en staging') {
             environment {
                 KUBECONFIG = credentials("config")
             }
             steps {
                 script {
-                sh '''
-                 rm -rf .kube && mkdir .kube
-                 cp ${KUBECONFIG} .kube/config
-                 sed -e "s+tag:.*+tag: ${DOCKER_TAG}+g" charts/values.yaml > values.yaml
-                 helm upgrade --install app charts --namespace staging -f values.yaml
-                '''
+                    writeFile file: '.kube/config', text: "${KUBECONFIG}"
+                    sh '''
+                    sed -e "s+tag:.*+tag: \\\"${DOCKER_TAG}\\\"+g" charts/values.yaml > values.yaml
+                    helm upgrade --install app charts --namespace staging -f values.yaml
+                    '''
                 }
             }
         }
-        stage('Deploiement en prod'){
+
+        stage('Déploiement en prod') {
             environment {
                 KUBECONFIG = credentials("config")
             }
@@ -99,17 +94,17 @@ services:
                     input message: 'Do you want to deploy in production ?', ok: 'Yes'
                 }
                 script {
-                sh '''
-                 rm -rf .kube && mkdir .kube
-                 cp ${KUBECONFIG} .kube/config
-                 sed -e "s+tag:.*+tag: ${DOCKER_TAG}+g" charts/values.yaml > values.yaml
-                 helm upgrade --install app charts --namespace prod -f values.yaml
-                '''
+                    writeFile file: '.kube/config', text: "${KUBECONFIG}"
+                    sh '''
+                    sed -e "s+tag:.*+tag: \\\"${DOCKER_TAG}\\\"+g" charts/values.yaml > values.yaml
+                    helm upgrade --install app charts --namespace prod -f values.yaml
+                    '''
                 }
             }
         }
     }
-    post { // send email when the job has failed
+
+    post {
         failure {
             echo "This will run if the job failed"
             mail to: "jhon.castaneda.angulo@gmail.com",
@@ -118,4 +113,3 @@ services:
         }
     }
 }
-
