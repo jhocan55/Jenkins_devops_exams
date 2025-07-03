@@ -38,15 +38,17 @@ pipeline {
         }
         stage('Compose Up') {
             steps {
-                // disable host‐path binds (workspace is read-only) by overriding volumes
-                writeFile file: 'jenkins.override.yml', text: '''
-services:
-  movie_service:
-    volumes: []
-  cast_service:
-    volumes: []
-'''
-                sh 'docker compose -f docker-compose.yml -f jenkins.override.yml up -d'
+                sh '''
+                  # make a transient copy
+                  cp docker-compose.yml tmp-compose.yml
+                  # drop "volumes:" lines
+                  sed -i "/^[[:space:]]*volumes:/d" tmp-compose.yml
+                  # drop the following mount entries (./movie-service and ./cast-service)
+                  sed -i "/-[[:space:]]*\\.\\/movie-service\\//d" tmp-compose.yml
+                  sed -i "/-[[:space:]]*\\.\\/cast-service\\//d" tmp-compose.yml
+                  # bring it up without read-only errors
+                  docker compose -f tmp-compose.yml up -d
+                '''
             }
         }
         stage('Test Services') {
