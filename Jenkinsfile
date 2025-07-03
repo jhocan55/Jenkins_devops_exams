@@ -12,7 +12,6 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker rm -f jenkins || true
                     docker compose build
                     '''
                 }
