@@ -62,7 +62,7 @@ EOF
           sh """
             helm upgrade --install fastapiapp charts \
               --namespace dev \
-              --kubeconfig "$KUBE_CFG" \
+              --kubeconfig "$KUBE_CFG" -n dev port-forward svc/fastapiapp 8081:80\
               -f charts/values-dev.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
@@ -77,7 +77,7 @@ EOF
           sh """
             helm upgrade --install fastapiapp charts \
               --namespace qa \
-              --kubeconfig "$KUBE_CFG" \
+              --kubeconfig "$KUBE_CFG" -n qa port-forward svc/fastapiapp 8082:80\
               -f charts/values-qa.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
@@ -92,7 +92,7 @@ EOF
           sh """
             helm upgrade --install fastapiapp charts \
               --namespace staging \
-              --kubeconfig "$KUBE_CFG" \
+              --kubeconfig "$KUBE_CFG"-n staging port-forward svc/fastapiapp 8083:80\
               -f charts/values-staging.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
@@ -110,7 +110,7 @@ EOF
           sh """
             helm upgrade --install fastapiapp charts \
               --namespace prod \
-              --kubeconfig "$KUBE_CFG" \
+              --kubeconfig "$KUBE_CFG" -n prod port-forward svc/fastapiapp 8084:80\
               -f charts/values-prod.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
