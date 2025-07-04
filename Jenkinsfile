@@ -44,11 +44,11 @@ pipeline {
           sh """
             echo "===== STARTING SERVICES WITH DOCKER COMPOSE (No volumes, no build) ====="
 
-            docker compose config | \
-            sed '/^\\s*build:/d' | \
-            sed '/^\\s*volumes:/,/^\\s*[^ \\t-]/d' | \
-            sed 's|image:.*cast_service.*|image: ${CAST_IMAGE}|' | \
-            sed 's|image:.*movie_service.*|image: ${MOVIE_IMAGE}|' | \
+            // docker compose config | \
+            // sed '/^\\s*build:/d' | \
+            // sed '/^\\s*volumes:/,/^\\s*[^ \\t-]/d' | \
+            // sed 's|image:.*cast_service.*|image: ${CAST_IMAGE}|' | \
+            // sed 's|image:.*movie_service.*|image: ${MOVIE_IMAGE}|' | \
             docker compose -f - up -d
 
             sleep 10
