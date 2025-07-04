@@ -60,14 +60,14 @@ EOF
       steps {
         // 'config' must be a Secret File credential in Jenkins
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
-          sh '''
-            echo "Using kubeconfig at $KUBE_CFG"
+          sh """
             helm upgrade --install fastapiapp charts \
-              --namespace dev \
+              --namespace ${ENV} \
               --kubeconfig "$KUBE_CFG" \
+              -f charts/values-${ENV}.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
-          '''
+            """
         }
       }
     }
@@ -75,13 +75,14 @@ EOF
     stage('Deploy to QA') {
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
-          sh '''
-            helm upgrade --install fastapiapp charts \
-              --namespace qa \
-              --kubeconfig "$KUBE_CFG" \
-              --set movie.image.tag=${DOCKER_TAG} \
-              --set cast.image.tag=${DOCKER_TAG}
-          '''
+          sh """
+          helm upgrade --install fastapiapp charts \
+            --namespace ${ENV} \
+            --kubeconfig "$KUBE_CFG" \
+            -f charts/values-${ENV}.yaml \
+            --set movie.image.tag=${DOCKER_TAG} \
+            --set cast.image.tag=${DOCKER_TAG}
+          """
         }
       }
     }
@@ -89,13 +90,14 @@ EOF
     stage('Deploy to Staging') {
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
-          sh '''
+          sh """
             helm upgrade --install fastapiapp charts \
-              --namespace staging \
+              --namespace ${ENV} \
               --kubeconfig "$KUBE_CFG" \
+              -f charts/values-${ENV}.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
-          '''
+            """
         }
       }
     }
@@ -106,13 +108,14 @@ EOF
           input message: 'Approve prod deploy?', ok: 'Yes'
         }
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
-          sh '''
+          sh """
             helm upgrade --install fastapiapp charts \
-              --namespace prod \
+              --namespace ${ENV} \
               --kubeconfig "$KUBE_CFG" \
+              -f charts/values-${ENV}.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
-          '''
+            """
         }
       }
     }
