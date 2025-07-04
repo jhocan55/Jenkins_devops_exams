@@ -7,10 +7,11 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
+    - name: http
+      port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
+      {{- if .Values.service.nodePort }}
       nodePort: {{ .Values.service.nodePort }}
-      protocol: TCP
-      name: http
+      {{- end }}
   selector:
     {{- include "fastapiapp.selectorLabels" . | nindent 4 }}
