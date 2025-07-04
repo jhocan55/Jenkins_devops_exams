@@ -20,9 +20,9 @@ pipeline {
             # Build all services per docker-compose.yml
             docker compose build
 
-            # Find the two compose-built images (project name is folder: Jenkins_devops_exams)
-            MOVIE_ID=$(docker images -q Jenkins_devops_exams_movie_service:latest)
-            CAST_ID=$(docker images -q Jenkins_devops_exams_cast_service:latest)
+            # Directly grab the image IDs by service name
+            MOVIE_ID=$(docker compose images -q movie_service)
+            CAST_ID=$(docker compose images -q cast_service)
 
             if [ -z "$MOVIE_ID" ] || [ -z "$CAST_ID" ]; then
               echo "Could not find compose-built images"; exit 1
