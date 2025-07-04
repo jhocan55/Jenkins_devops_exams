@@ -14,7 +14,6 @@ pipeline {
           sh '''
                    
             docker ps -a
-
             echo "===== BUILD movie-service ====="
             docker build \
               --build-arg DOCKER_ID=${DOCKER_ID} \
