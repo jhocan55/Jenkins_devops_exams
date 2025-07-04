@@ -1,5 +1,6 @@
 pipeline {
   agent any
+
   environment {
     DOCKER_ID    = "jhocan55"
     DOCKER_TAG   = "v.${BUILD_ID}.0"
@@ -12,12 +13,17 @@ pipeline {
       steps {
         script {
           sh '''
-            echo "===== CONTAINERS BEFORE DOWN ====="
-            docker ps -a
-            echo "===== STOPPING AND REMOVING OLD SERVICES ====="
-            docker compose down --remove-orphans
-            docker compose up -d 
-            sleep 10
+            set -eux
+
+            echo "===== CLEANUP ====="
+            docker compose down --remove-orphans || true
+
+            echo "===== BUILD via docker-compose ====="
+            docker compose build
+
+            echo "===== UP via docker-compose ====="
+            docker compose up -d
+            sleep 20
           '''
         }
       }
@@ -35,14 +41,20 @@ pipeline {
       }
     }
 
-    stage('Docker Push') {
+    stage('Tag & Push Images') {
       environment {
         DOCKER_PASS = credentials("DOCKER_HUB_PASS")
       }
       steps {
         script {
           sh '''
-            docker login -u $DOCKER_ID -p $DOCKER_PASS
+            echo "$DOCKER_PASS" | docker login -u "$DOCKER_ID" --password-stdin
+
+            echo "===== TAGGING ====="
+            docker tag datascientest-ci-cd-exam_movie_service:latest ${MOVIE_IMAGE}
+            docker tag datascientest-ci-cd-exam_cast_service:latest  ${CAST_IMAGE}
+
+            echo "===== PUSHING ====="
             docker push ${MOVIE_IMAGE}
             docker push ${CAST_IMAGE}
           '''
@@ -51,60 +63,50 @@ pipeline {
     }
 
     stage('Deploy to Dev') {
-      environment {
-        KUBECONFIG = credentials("config")
-      }
+      environment { KUBECONFIG = credentials("config") }
       steps {
-        script {
-          writeFile file: '.kube/config', text: "${KUBECONFIG}"
-          sh '''
-            helm upgrade --install app charts \
-              --namespace dev \
-              --kubeconfig .kube/config \
-              --set image.tag=${DOCKER_TAG}
-          '''
-        }
+        writeFile file: '.kube/config', text: "${KUBECONFIG}"
+        sh '''
+          helm upgrade --install app charts \
+            --namespace dev \
+            --kubeconfig .kube/config \
+            --set movie.image.tag=${DOCKER_TAG} \
+            --set cast.image.tag=${DOCKER_TAG}
+        '''
       }
     }
 
     stage('Deploy to Staging') {
-      environment {
-        KUBECONFIG = credentials("config")
-      }
+      environment { KUBECONFIG = credentials("config") }
       steps {
-        script {
-          writeFile file: '.kube/config', text: "${KUBECONFIG}"
-          sh '''
-            helm upgrade --install app charts \
-              --namespace staging \
-              --kubeconfig .kube/config \
-              --set image.tag=${DOCKER_TAG}
-          '''
-        }
+        writeFile file: '.kube/config', text: "${KUBECONFIG}"
+        sh '''
+          helm upgrade --install app charts \
+            --namespace staging \
+            --kubeconfig .kube/config \
+            --set movie.image.tag=${DOCKER_TAG} \
+            --set cast.image.tag=${DOCKER_TAG}
+        '''
       }
     }
 
     stage('Deploy to Prod') {
-      environment {
-        KUBECONFIG = credentials("config")
-      }
+      environment { KUBECONFIG = credentials("config") }
       steps {
         timeout(time: 15, unit: 'MINUTES') {
           input message: 'Approve production deploy?', ok: 'Yes'
         }
-        script {
-          writeFile file: '.kube/config', text: "${KUBECONFIG}"
-          sh '''
-            helm upgrade --install app charts \
-              --namespace prod \
-              --kubeconfig .kube/config \
-              --set image.tag=${DOCKER_TAG}
-          '''
-        }
+        writeFile file: '.kube/config', text: "${KUBECONFIG}"
+        sh '''
+          helm upgrade --install app charts \
+            --namespace prod \
+            --kubeconfig .kube/config \
+            --set movie.image.tag=${DOCKER_TAG} \
+            --set cast.image.tag=${DOCKER_TAG}
+        '''
       }
     }
   }
-
   post {
     failure {
       mail to:    "jhon.castaneda.angulo@gmail.com",

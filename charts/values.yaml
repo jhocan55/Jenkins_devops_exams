@@ -4,11 +4,17 @@
 
 replicaCount: 3
 
-image:
-  repository: sajjadhz/fastapiapp
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+movie:
+  image:
+    repository: jhocan55/movie_service
+    pullPolicy: IfNotPresent
+    tag: ""
+
+cast:
+  image:
+    repository: jhocan55/cast_service
+    pullPolicy: IfNotPresent
+    tag: ""
 
 imagePullSecrets: 
   - name: "regcred"
