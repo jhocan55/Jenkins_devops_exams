@@ -12,30 +12,7 @@ pipeline {
       steps {
         script {
           sh '''
-            set -eux
-
-            echo "===== BEFORE DOWN: docker ps -a ====="
-            docker ps -a
-
-            echo "===== INSPECT ALL CONTAINERS ====="
-            for ID in $(docker ps -aq); do
-              echo "---- $ID ----"
-              docker inspect --format \
-                'Name={{.Name}} State={{.State.Status}} User={{.Config.User}}' $ID
-            done
-
-            echo "===== TRYING docker compose down (timeout=60) ====="
-            docker compose down --timeout 60 --remove-orphans || {
-              echo "⚠️ compose down failed, attempting manual docker stop…"
-              for ID in $(docker ps -aq); do
-                echo "stopping $ID"
-                docker stop --time=30 $ID || echo "❌ could not stop $ID"
-              done
-              echo "retrying compose down"
-              docker compose down --timeout 60 --remove-orphans
-            }
-
-            echo "===== AFTER DOWN: docker ps -a ====="
+                   
             docker ps -a
 
             echo "===== BUILD movie-service ====="
