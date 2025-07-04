@@ -44,7 +44,7 @@ pipeline {
           sh """
             echo "===== STARTING SERVICES WITH DOCKER COMPOSE (No volumes, no build) ====="
             # bring down old stack (if you want)
-            docker compose down --remove-orphans
+            # docker compose down --remove-orphans
 
             docker pull ${CAST_IMAGE}
             docker pull ${MOVIE_IMAGE}
