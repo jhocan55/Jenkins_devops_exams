@@ -12,6 +12,10 @@ pipeline {
       steps {
         script {
           sh '''
+            echo "===== DOCKER ENVIRONMENT ====="
+            echo "DOCKER_HOST=${DOCKER_HOST:-<unset>}"
+            docker context ls
+            docker info
             echo "===== DEBUG INFO START ====="
             echo "User: $(whoami)"
             echo "Groups: $(groups)"
