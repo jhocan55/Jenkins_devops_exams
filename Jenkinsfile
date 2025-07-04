@@ -8,15 +8,28 @@ pipeline {
   }
 
   stages {
-    stage('Build Docker Images') {
+    stage('Build & Start Services') {
       steps {
         script {
           sh '''
-            echo "===== BUILD movie-service ====="
-            docker build -t ${MOVIE_IMAGE} ./movie-service
+            echo "===== CONTAINERS BEFORE DOWN ====="
+            docker ps -a
+            echo "===== STOPPING AND REMOVING OLD SERVICES ====="
+            docker compose down --remove-orphans
+            docker compose up -d 
+            sleep 10
+          '''
+        }
+      }
+    }
 
-            echo "===== BUILD cast-service ====="
-            docker build -t ${CAST_IMAGE} ./cast-service
+    stage('Test') {
+      steps {
+        script {
+          sh '''
+            # Acceptance tests
+            curl -f http://localhost:8001/api/v1/movies
+            curl -f http://localhost:8002/api/v1/casts
           '''
         }
       }
@@ -29,40 +42,9 @@ pipeline {
       steps {
         script {
           sh '''
-            echo "===== PUSHING IMAGES TO DOCKER HUB ====="
             docker login -u $DOCKER_ID -p $DOCKER_PASS
             docker push ${MOVIE_IMAGE}
             docker push ${CAST_IMAGE}
-          '''
-        }
-      }
-    }
-
-    stage('Start Services') {
-      steps {
-        script {
-          sh """
-            echo "===== STARTING SERVICES WITH DOCKER COMPOSE (No volumes, no build) ====="
-            # bring down old stack (if you want)
-            # docker compose down --remove-orphans
-
-            docker pull ${CAST_IMAGE}
-            docker pull ${MOVIE_IMAGE}
-            docker compose up -d --no-build
-
-            sleep 10
-          """
-        }
-      }
-    }
-
-    stage('Test') {
-      steps {
-        script {
-          sh '''
-            echo "===== RUNNING ACCEPTANCE TESTS ====="
-            curl -f http://localhost:8001/api/v1/movies
-            curl -f http://localhost:8002/api/v1/casts
           '''
         }
       }
@@ -125,9 +107,9 @@ pipeline {
 
   post {
     failure {
-      mail to: "jhon.castaneda.angulo@gmail.com",
+      mail to:    "jhon.castaneda.angulo@gmail.com",
            subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
-           body: "See the console output at ${env.BUILD_URL}"
+           body:    "See the console output at ${env.BUILD_URL}"
     }
   }
 }
