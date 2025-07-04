@@ -3,8 +3,7 @@ pipeline {
     DOCKER_ID    = "jhocan55"
     DOCKER_TAG   = "v.${BUILD_ID}.0"
     MOVIE_IMAGE  = "${DOCKER_ID}/movie_service:${DOCKER_TAG}"
-    CAST_IMAGE   = "${DOCKER_ID}/cast_service:${DOCKER_TAG}"
-    
+    CAST_IMAGE   = "${DOCKER_ID}/cast_service:${DOCKER_TAG}"    
     // When you deploy with Helm, your chart’s values.yaml should
     // have image.tag: "" so we can inject via --set image.tag=${DOCKER_TAG}
   }
