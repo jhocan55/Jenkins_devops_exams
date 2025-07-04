@@ -13,23 +13,24 @@ pipeline {
         script {
           sh '''
             # 1) Tear down old containers
-            sudo docker compose down --remove-orphans
+            docker compose down --remove-orphans
 
             # 2) Build movie-service with your tag
-            sudo docker build \
+            docker build \
               --build-arg DOCKER_ID=${DOCKER_ID} \
               --build-arg DOCKER_TAG=${DOCKER_TAG} \
               -t ${MOVIE_IMAGE} ./movie-service
 
             # 3) Build cast-service with your tag
-            sudo docker build \
+            docker build \
               --build-arg DOCKER_ID=${DOCKER_ID} \
               --build-arg DOCKER_TAG=${DOCKER_TAG} \
               -t ${CAST_IMAGE} ./cast-service
 
             # 4) Start stack using the pre-built images
-            sudo docker compose up -d --no-build
-            sleep 10                        
+            docker compose up -d --no-build
+            sleep 10  
+                                  
           '''
         }
       }
