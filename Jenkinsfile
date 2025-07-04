@@ -58,13 +58,12 @@ EOF
 
     stage('Deploy to Dev') {
       steps {
-        // 'config' must be a Secret File credential in Jenkins
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
           sh """
             helm upgrade --install fastapiapp charts \
-              --namespace ${ENV} \
+              --namespace dev \
               --kubeconfig "$KUBE_CFG" \
-              -f charts/values-${ENV}.yaml \
+              -f charts/values-dev.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
             """
@@ -76,13 +75,13 @@ EOF
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
           sh """
-          helm upgrade --install fastapiapp charts \
-            --namespace ${ENV} \
-            --kubeconfig "$KUBE_CFG" \
-            -f charts/values-${ENV}.yaml \
-            --set movie.image.tag=${DOCKER_TAG} \
-            --set cast.image.tag=${DOCKER_TAG}
-          """
+            helm upgrade --install fastapiapp charts \
+              --namespace qa \
+              --kubeconfig "$KUBE_CFG" \
+              -f charts/values-qa.yaml \
+              --set movie.image.tag=${DOCKER_TAG} \
+              --set cast.image.tag=${DOCKER_TAG}
+            """
         }
       }
     }
