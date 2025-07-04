@@ -60,7 +60,6 @@ EOF
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
           sh '''
-            # 1) Helm upgrade/install
             helm upgrade --install fastapiapp charts \
               --namespace dev \
               --kubeconfig "$KUBE_CFG" \
@@ -68,8 +67,11 @@ EOF
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
 
-            # 2) Port-forward into background
+            # port-forward, wait, test
             kubectl --kubeconfig "$KUBE_CFG" -n dev port-forward svc/fastapiapp 8081:80 &
+            PF=$!; sleep 5
+            curl -f http://localhost:8081/api/v1/movies/docs
+            kill $PF
           '''
         }
       }
@@ -79,7 +81,6 @@ EOF
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
           sh '''
-            # 1) Helm upgrade/install
             helm upgrade --install fastapiapp charts \
               --namespace qa \
               --kubeconfig "$KUBE_CFG" \
@@ -87,8 +88,10 @@ EOF
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
 
-            # 2) Port-forward into background
             kubectl --kubeconfig "$KUBE_CFG" -n qa port-forward svc/fastapiapp 8082:80 &
+            PF=$!; sleep 5
+            curl -f http://localhost:8082/api/v1/movies/docs
+            kill $PF
           '''
         }
       }
@@ -98,7 +101,6 @@ EOF
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
           sh '''
-            # 1) Helm upgrade/install
             helm upgrade --install fastapiapp charts \
               --namespace staging \
               --kubeconfig "$KUBE_CFG" \
@@ -106,8 +108,10 @@ EOF
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
 
-            # 2) Port-forward into background
             kubectl --kubeconfig "$KUBE_CFG" -n staging port-forward svc/fastapiapp 8083:80 &
+            PF=$!; sleep 5
+            curl -f http://localhost:8083/api/v1/movies/docs
+            kill $PF
           '''
         }
       }
@@ -120,7 +124,6 @@ EOF
         }
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
           sh '''
-            # 1) Helm upgrade/install
             helm upgrade --install fastapiapp charts \
               --namespace prod \
               --kubeconfig "$KUBE_CFG" \
@@ -128,8 +131,10 @@ EOF
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
 
-            # 2) Port-forward into background
-            kubectl --kubeconfig "$KUBE_CFG" -n prod port-forward svc/fastapiapp 80844:80 &
+            kubectl --kubeconfig "$KUBE_CFG" -n prod port-forward svc/fastapiapp 8084:80 &
+            PF=$!; sleep 5
+            curl -f http://localhost:8084/api/v1/movies/docs
+            kill $PF
           '''
         }
       }
