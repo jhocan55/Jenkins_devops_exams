@@ -13,21 +13,28 @@ pipeline {
         script {
           sh '''
                    
-            docker ps -a
-            echo "===== BUILD movie-service ====="
-            docker build \
-              --build-arg DOCKER_ID=${DOCKER_ID} \
-              --build-arg DOCKER_TAG=${DOCKER_TAG} \
-              -t ${MOVIE_IMAGE} ./movie-service
+            // docker ps -a
+            // echo "===== BUILD movie-service ====="
+            // docker build \
+            //   --build-arg DOCKER_ID=${DOCKER_ID} \
+            //   --build-arg DOCKER_TAG=${DOCKER_TAG} \
+            //   -t ${MOVIE_IMAGE} ./movie-service
 
-            echo "===== BUILD cast-service ====="
-            docker build \
-              --build-arg DOCKER_ID=${DOCKER_ID} \
-              --build-arg DOCKER_TAG=${DOCKER_TAG} \
-              -t ${CAST_IMAGE} ./cast-service
+            // echo "===== BUILD cast-service ====="
+            // docker build \
+            //   --build-arg DOCKER_ID=${DOCKER_ID} \
+            //   --build-arg DOCKER_TAG=${DOCKER_TAG} \
+            //   -t ${CAST_IMAGE} ./cast-service
 
-            echo "===== docker compose up ====="
-            docker compose up -d --no-build
+            // echo "===== docker compose up ====="
+            // docker compose up -d --no-build
+
+            docker compose config | \
+            sed '/build:/,/[^ ]/d' | \
+            sed '/volumes:/,/[^ ]/d' | \
+            sed 's|image: datascientest-ci-cd-exam-cast_service|image: jhocan55/cast_service:${DOCKER_TAG}|' | \
+            sed 's|image: datascientest-ci-cd-exam-movie_service|image: jhocan55/movie_service:${DOCKER_TAG}|' | \
+            docker compose -f - up -d
             sleep 10
 
             echo "===== FINISHED BUILD & START ====="
