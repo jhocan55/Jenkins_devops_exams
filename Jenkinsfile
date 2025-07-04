@@ -72,6 +72,20 @@ EOF
       }
     }
 
+    stage('Deploy to QA') {
+      steps {
+        withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
+          sh '''
+            helm upgrade --install fastapiapp charts \
+              --namespace qa \
+              --kubeconfig "$KUBE_CFG" \
+              --set movie.image.tag=${DOCKER_TAG} \
+              --set cast.image.tag=${DOCKER_TAG}
+          '''
+        }
+      }
+    }
+
     stage('Deploy to Staging') {
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
