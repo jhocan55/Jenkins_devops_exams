@@ -78,14 +78,18 @@ EOF
     stage('Deploy to QA') {
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
-          sh """
+          sh '''
+            # 1) Helm upgrade/install
             helm upgrade --install fastapiapp charts \
               --namespace qa \
-              --kubeconfig "$KUBE_CFG" -n qa port-forward svc/fastapiapp 8082:80\
+              --kubeconfig "$KUBE_CFG" \
               -f charts/values-qa.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
-            """
+
+            # 2) Port-forward into background
+            kubectl --kubeconfig "$KUBE_CFG" -n qa port-forward svc/fastapiapp 8082:80 &
+          '''
         }
       }
     }
@@ -93,14 +97,18 @@ EOF
     stage('Deploy to Staging') {
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
-          sh """
+          sh '''
+            # 1) Helm upgrade/install
             helm upgrade --install fastapiapp charts \
               --namespace staging \
-              --kubeconfig "$KUBE_CFG"-n staging port-forward svc/fastapiapp 8083:80\
+              --kubeconfig "$KUBE_CFG" \
               -f charts/values-staging.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
-            """
+
+            # 2) Port-forward into background
+            kubectl --kubeconfig "$KUBE_CFG" -n staging port-forward svc/fastapiapp 8083:80 &
+          '''
         }
       }
     }
@@ -111,14 +119,18 @@ EOF
           input message: 'Approve prod deploy?', ok: 'Yes'
         }
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
-          sh """
+          sh '''
+            # 1) Helm upgrade/install
             helm upgrade --install fastapiapp charts \
               --namespace prod \
-              --kubeconfig "$KUBE_CFG" -n prod port-forward svc/fastapiapp 8084:80\
+              --kubeconfig "$KUBE_CFG" \
               -f charts/values-prod.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
-            """
+
+            # 2) Port-forward into background
+            kubectl --kubeconfig "$KUBE_CFG" -n prod port-forward svc/fastapiapp 80844:80 &
+          '''
         }
       }
     }
