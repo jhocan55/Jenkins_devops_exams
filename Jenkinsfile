@@ -42,11 +42,11 @@ pipeline {
       steps {
         script {
           sh """
-            echo "===== STARTING SERVICES WITH DOCKER COMPOSE (No volumes, no build) =====
-            docker compose down --remove-orphans       
+            echo "===== STARTING SERVICES WITH DOCKER COMPOSE (No volumes, no build) ====="
+            docker compose down --remove-orphans
             docker pull ${CAST_IMAGE}
-            docker pull  ${MOVIE_IMAGE}
-            docker compose -f - up -d
+            docker pull ${MOVIE_IMAGE}
+            docker compose up -d --no-build
 
             sleep 10
           """
