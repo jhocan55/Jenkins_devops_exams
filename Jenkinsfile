@@ -8,48 +8,15 @@ pipeline {
   }
 
   stages {
-    stage('Build & Start Services') {
+    stage('Build Docker Images') {
       steps {
         script {
           sh '''
-                   
-            // docker ps -a
-            // echo "===== BUILD movie-service ====="
-            // docker build \
-            //   --build-arg DOCKER_ID=${DOCKER_ID} \
-            //   --build-arg DOCKER_TAG=${DOCKER_TAG} \
-            //   -t ${MOVIE_IMAGE} ./movie-service
+            echo "===== BUILD movie-service ====="
+            docker build -t ${MOVIE_IMAGE} ./movie-service
 
-            // echo "===== BUILD cast-service ====="
-            // docker build \
-            //   --build-arg DOCKER_ID=${DOCKER_ID} \
-            //   --build-arg DOCKER_TAG=${DOCKER_TAG} \
-            //   -t ${CAST_IMAGE} ./cast-service
-
-            // echo "===== docker compose up ====="
-            // docker compose up -d --no-build
-
-            docker compose config | \
-            sed '/build:/,/[^ ]/d' | \
-            sed '/volumes:/,/[^ ]/d' | \
-            sed 's|image: datascientest-ci-cd-exam-cast_service|image: jhocan55/cast_service:${DOCKER_TAG}|' | \
-            sed 's|image: datascientest-ci-cd-exam-movie_service|image: jhocan55/movie_service:${DOCKER_TAG}|' | \
-            docker compose -f - up -d
-            sleep 10
-
-            echo "===== FINISHED BUILD & START ====="
-          '''
-        }
-      }
-    }
-
-    stage('Test') {
-      steps {
-        script {
-          sh '''
-            # Acceptance tests
-            curl -f http://localhost:8001/api/v1/movies
-            curl -f http://localhost:8002/api/v1/casts
+            echo "===== BUILD cast-service ====="
+            docker build -t ${CAST_IMAGE} ./cast-service
           '''
         }
       }
@@ -62,9 +29,41 @@ pipeline {
       steps {
         script {
           sh '''
+            echo "===== PUSHING IMAGES TO DOCKER HUB ====="
             docker login -u $DOCKER_ID -p $DOCKER_PASS
             docker push ${MOVIE_IMAGE}
             docker push ${CAST_IMAGE}
+          '''
+        }
+      }
+    }
+
+    stage('Start Services') {
+      steps {
+        script {
+          sh """
+            echo "===== STARTING SERVICES WITH DOCKER COMPOSE (No volumes, no build) ====="
+
+            docker compose config | \
+            sed '/^\\s*build:/d' | \
+            sed '/^\\s*volumes:/,/^\\s*[^ \\t-]/d' | \
+            sed 's|image:.*cast_service.*|image: ${CAST_IMAGE}|' | \
+            sed 's|image:.*movie_service.*|image: ${MOVIE_IMAGE}|' | \
+            docker compose -f - up -d
+
+            sleep 10
+          """
+        }
+      }
+    }
+
+    stage('Test') {
+      steps {
+        script {
+          sh '''
+            echo "===== RUNNING ACCEPTANCE TESTS ====="
+            curl -f http://localhost:8001/api/v1/movies
+            curl -f http://localhost:8002/api/v1/casts
           '''
         }
       }
@@ -127,9 +126,9 @@ pipeline {
 
   post {
     failure {
-      mail to:    "jhon.castaneda.angulo@gmail.com",
+      mail to: "jhon.castaneda.angulo@gmail.com",
            subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
-           body:    "See the console output at ${env.BUILD_URL}"
+           body: "See the console output at ${env.BUILD_URL}"
     }
   }
 }
