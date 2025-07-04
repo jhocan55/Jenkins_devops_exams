@@ -12,6 +12,18 @@ pipeline {
       steps {
         script {
           sh '''
+            echo "===== DEBUG INFO START ====="
+            echo "User: $(whoami)"
+            echo "Groups: $(groups)"
+            echo "Workspace: $(pwd)"
+            echo "Workspace perms:"
+            ls -ld .
+            echo "Parent perms:"
+            ls -ld ..
+            echo "Docker socket perms:"
+            ls -l /var/run/docker.sock
+            echo "===== DEBUG INFO END ====="
+
             # 1) Tear down old containers
             docker compose down --remove-orphans
 
@@ -29,7 +41,8 @@ pipeline {
 
             # 4) Start stack using the pre-built images
             docker compose up -d --no-build
-            sleep 10                                    
+
+            sleep 10
           '''
         }
       }
