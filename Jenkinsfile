@@ -6,7 +6,6 @@ pipeline {
     DOCKER_TAG           = "v.${BUILD_ID}.0"
     MOVIE_IMAGE          = "${DOCKER_ID}/movie_service:${DOCKER_TAG}"
     CAST_IMAGE           = "${DOCKER_ID}/cast_service:${DOCKER_TAG}"
-    COMPOSE_PROJECT_NAME = "datascientest-ci-cd-exam"
   }
 
   stages {
@@ -16,14 +15,17 @@ pipeline {
           sh '''
             set -eux
 
-            echo ">>> Tear down old stack (if any)"
-            docker compose -p ${COMPOSE_PROJECT_NAME} down --remove-orphans || true
+            # write .env so compose picks up DOCKER_ID/DOCKER_TAG
+            cat > .env <<EOF
+DOCKER_ID=${DOCKER_ID}
+DOCKER_TAG=${DOCKER_TAG}
+EOF
 
-            echo ">>> Build all services"
-            docker compose -p ${COMPOSE_PROJECT_NAME} build
+            echo ">>> Tear down old stack"
+            docker compose down --remove-orphans || true
 
-            echo ">>> Bring up"
-            docker compose -p ${COMPOSE_PROJECT_NAME} up -d
+            echo ">>> Build & bring up all services in one step"
+            docker compose up -d --build
             sleep 20
           '''
         }
@@ -32,38 +34,25 @@ pipeline {
 
     stage('Test Acceptance') {
       steps {
-        script {
-          sh '''
-            echo ">>> Testing movie-service"
-            curl -f http://localhost:8001/api/v1/movies
-
-            echo ">>> Testing cast-service"
-            curl -f http://localhost:8002/api/v1/casts
-          '''
-        }
+        sh '''
+          curl -f http://localhost:8001/api/v1/movies
+          curl -f http://localhost:8002/api/v1/casts
+        '''
       }
     }
 
-    stage('Tag & Push Images') {
+    stage('Docker Push') {
       environment {
         DOCKER_PASS = credentials("DOCKER_HUB_PASS")
       }
       steps {
-        script {
-          sh '''
-            set -eux
+        sh '''
+          echo "$DOCKER_PASS" | docker login -u "$DOCKER_ID" --password-stdin
 
-            echo "$DOCKER_PASS" | docker login -u "$DOCKER_ID" --password-stdin
-
-            echo ">>> Retagging images"
-            docker tag ${COMPOSE_PROJECT_NAME}_movie_service:latest ${MOVIE_IMAGE}
-            docker tag ${COMPOSE_PROJECT_NAME}_cast_service:latest  ${CAST_IMAGE}
-
-            echo ">>> Pushing to Docker Hub"
-            docker push ${MOVIE_IMAGE}
-            docker push ${CAST_IMAGE}
-          '''
-        }
+          echo ">>> Pushing images built by Compose"
+          docker push ${MOVIE_IMAGE}
+          docker push ${CAST_IMAGE}
+        '''
       }
     }
 
