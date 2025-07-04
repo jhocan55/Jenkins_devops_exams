@@ -56,6 +56,15 @@ EOF
       }
     }
 
+    stage('Teardown Compose') {
+      steps {
+        echo '>>> Stopping local Docker-Compose (free up 8081–8084)'
+        sh '''
+          docker compose down --remove-orphans || true
+        '''
+      }
+    }
+
     stage('Deploy to Dev') {
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
