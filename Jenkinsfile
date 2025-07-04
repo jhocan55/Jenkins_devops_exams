@@ -12,28 +12,49 @@ pipeline {
       steps {
         script {
           sh '''
-            echo "===== CONTAINERS BEFORE DOWN ====="
-            docker ps -a
-            # give containers a bit longer to exit cleanly
-            docker compose down --timeout 30 --remove-orphans
+            set -eux
 
-            echo "===== CONTAINERS AFTER DOWN ====="
+            echo "===== BEFORE DOWN: docker ps -a ====="
             docker ps -a
-            sleep 5
 
-            echo "===== BUILD & START ====="
+            echo "===== INSPECT ALL CONTAINERS ====="
+            for ID in $(docker ps -aq); do
+              echo "---- $ID ----"
+              docker inspect --format \
+                'Name={{.Name}} State={{.State.Status}} User={{.Config.User}}' $ID
+            done
+
+            echo "===== TRYING docker compose down (timeout=60) ====="
+            docker compose down --timeout 60 --remove-orphans || {
+              echo "⚠️ compose down failed, attempting manual docker stop…"
+              for ID in $(docker ps -aq); do
+                echo "stopping $ID"
+                docker stop --time=30 $ID || echo "❌ could not stop $ID"
+              done
+              echo "retrying compose down"
+              docker compose down --timeout 60 --remove-orphans
+            }
+
+            echo "===== AFTER DOWN: docker ps -a ====="
+            docker ps -a
+
+            echo "===== BUILD movie-service ====="
             docker build \
               --build-arg DOCKER_ID=${DOCKER_ID} \
               --build-arg DOCKER_TAG=${DOCKER_TAG} \
               -t ${MOVIE_IMAGE} ./movie-service
 
+            echo "===== BUILD cast-service ====="
             docker build \
               --build-arg DOCKER_ID=${DOCKER_ID} \
               --build-arg DOCKER_TAG=${DOCKER_TAG} \
               -t ${CAST_IMAGE} ./cast-service
 
+            echo "===== docker compose up ====="
             docker compose up -d --no-build
             sleep 10
+
+            echo "===== FINISHED BUILD & START ====="
           '''
         }
       }
