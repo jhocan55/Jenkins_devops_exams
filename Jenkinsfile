@@ -91,9 +91,9 @@ EOF
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
           sh """
             helm upgrade --install fastapiapp charts \
-              --namespace ${ENV} \
+              --namespace staging \
               --kubeconfig "$KUBE_CFG" \
-              -f charts/values-${ENV}.yaml \
+              -f charts/values-staging.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
             """
@@ -109,9 +109,9 @@ EOF
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
           sh """
             helm upgrade --install fastapiapp charts \
-              --namespace ${ENV} \
+              --namespace prod \
               --kubeconfig "$KUBE_CFG" \
-              -f charts/values-${ENV}.yaml \
+              -f charts/values-prod.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
             """
