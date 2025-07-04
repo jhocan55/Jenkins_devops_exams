@@ -2,10 +2,11 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_ID    = "jhocan55"
-    DOCKER_TAG   = "v.${BUILD_ID}.0"
-    MOVIE_IMAGE  = "${DOCKER_ID}/movie_service:${DOCKER_TAG}"
-    CAST_IMAGE   = "${DOCKER_ID}/cast_service:${DOCKER_TAG}"
+    DOCKER_ID              = "jhocan55"
+    DOCKER_TAG             = "v.${BUILD_ID}.0"
+    MOVIE_IMAGE            = "${DOCKER_ID}/movie_service:${DOCKER_TAG}"
+    CAST_IMAGE             = "${DOCKER_ID}/cast_service:${DOCKER_TAG}"
+    COMPOSE_PROJECT_NAME   = "datascientest-ci-cd-exam"
   }
 
   stages {
@@ -14,15 +15,14 @@ pipeline {
         script {
           sh '''
             set -eux
-
             echo "===== CLEANUP ====="
-            docker compose down --remove-orphans || true
+            docker compose -p ${COMPOSE_PROJECT_NAME} down --remove-orphans || true
 
             echo "===== BUILD via docker-compose ====="
-            docker compose build
+            docker compose -p ${COMPOSE_PROJECT_NAME} build
 
             echo "===== UP via docker-compose ====="
-            docker compose up -d
+            docker compose -p ${COMPOSE_PROJECT_NAME} up -d
             sleep 20
           '''
         }
@@ -51,8 +51,8 @@ pipeline {
             echo "$DOCKER_PASS" | docker login -u "$DOCKER_ID" --password-stdin
 
             echo "===== TAGGING ====="
-            docker tag datascientest-ci-cd-exam_movie_service:latest ${MOVIE_IMAGE}
-            docker tag datascientest-ci-cd-exam_cast_service:latest  ${CAST_IMAGE}
+            docker tag ${COMPOSE_PROJECT_NAME}_movie_service:latest ${MOVIE_IMAGE}
+            docker tag ${COMPOSE_PROJECT_NAME}_cast_service:latest  ${CAST_IMAGE}
 
             echo "===== PUSHING ====="
             docker push ${MOVIE_IMAGE}
