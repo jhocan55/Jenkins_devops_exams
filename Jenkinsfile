@@ -119,7 +119,6 @@ EOF
       }
     }
   }
-
   post {
     failure {
       mail to:    "jhon.castaneda.angulo@gmail.com",
