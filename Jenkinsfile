@@ -1,5 +1,6 @@
 pipeline {
   agent any
+
   environment {
     DOCKER_ID    = "jhocan55"
     DOCKER_TAG   = "v.${BUILD_ID}.0"
@@ -12,9 +13,10 @@ pipeline {
       steps {
         script {
           sh '''
-                   
-            docker ps -a
+            # tear down any old containers
+            docker compose down --remove-orphans
 
+            # build & tag your services
             echo "===== BUILD movie-service ====="
             docker build \
               --build-arg DOCKER_ID=${DOCKER_ID} \
@@ -27,8 +29,23 @@ pipeline {
               --build-arg DOCKER_TAG=${DOCKER_TAG} \
               -t ${CAST_IMAGE} ./cast-service
 
-            echo "===== docker compose up ====="
-            docker compose up -d --no-build
+            # create an override to drop the host volume mounts
+            cat > docker-compose.ci.yml <<EOF
+version: '3.7'
+services:
+  movie_service:
+    image: ${MOVIE_IMAGE}
+    volumes: []
+  cast_service:
+    image: ${CAST_IMAGE}
+    volumes: []
+EOF
+
+            # bring up the stack using the pre-built images & no mounts
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.ci.yml \
+              up -d --no-build
             sleep 10
 
             echo "===== FINISHED BUILD & START ====="
