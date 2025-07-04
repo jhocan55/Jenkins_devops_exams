@@ -1,4 +1,5 @@
 pipeline {
+  agent any
   environment {
     DOCKER_ID    = "jhocan55"
     DOCKER_TAG   = "v.${BUILD_ID}.0"
@@ -7,13 +8,11 @@ pipeline {
     // When you deploy with Helm, your chart’s values.yaml should
     // have image.tag: "" so we can inject via --set image.tag=${DOCKER_TAG}
   }
-  agent any
 
   stages {
     stage('Build & Tag Images') {
       steps {
-        script {
-          sh '''
+        sh '''
             # Tear down any old containers
             docker compose down --remove-orphans
 
@@ -31,8 +30,7 @@ pipeline {
             # Tag them into your Docker Hub repo
             docker tag $MOVIE_ID ${MOVIE_IMAGE}
             docker tag $CAST_ID  ${CAST_IMAGE}
-          '''
-        }
+        '''
       }
     }
 
