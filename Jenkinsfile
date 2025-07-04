@@ -4,44 +4,41 @@ pipeline {
     DOCKER_ID    = "jhocan55"
     DOCKER_TAG   = "v.${BUILD_ID}.0"
     MOVIE_IMAGE  = "${DOCKER_ID}/movie_service:${DOCKER_TAG}"
-    CAST_IMAGE   = "${DOCKER_ID}/cast_service:${DOCKER_TAG}"    
-    // When you deploy with Helm, your chart’s values.yaml should
-    // have image.tag: "" so we can inject via --set image.tag=${DOCKER_TAG}
+    CAST_IMAGE   = "${DOCKER_ID}/cast_service:${DOCKER_TAG}"
   }
 
   stages {
-    stage('Build & Tag Images') {
-      steps {
-        sh '''
-            # Tear down any old containers
-            docker compose down --remove-orphans
-
-            # Build all services per docker-compose.yml
-            docker compose build
-
-            # Directly grab the image IDs by service name
-            MOVIE_ID=$(docker compose images -q movie_service)
-            CAST_ID=$(docker compose images -q cast_service)
-
-            if [ -z "$MOVIE_ID" ] || [ -z "$CAST_ID" ]; then
-              echo "Could not find compose-built images"; exit 1
-            fi
-
-            # Tag them into your Docker Hub repo
-            docker tag $MOVIE_ID ${MOVIE_IMAGE}
-            docker tag $CAST_ID  ${CAST_IMAGE}
-        '''
-      }
-    }
-
-    stage('Start Stack & Test') {
+    stage('Build & Start Services') {
       steps {
         script {
           sh '''
-            # Spin up (now using your freshly tagged images)
+            # 1) Tear down old containers
+            docker compose down --remove-orphans
+
+            # 2) Build movie-service with your tag
+            docker build \
+              --build-arg DOCKER_ID=${DOCKER_ID} \
+              --build-arg DOCKER_TAG=${DOCKER_TAG} \
+              -t ${MOVIE_IMAGE} ./movie-service
+
+            # 3) Build cast-service with your tag
+            docker build \
+              --build-arg DOCKER_ID=${DOCKER_ID} \
+              --build-arg DOCKER_TAG=${DOCKER_TAG} \
+              -t ${CAST_IMAGE} ./cast-service
+
+            # 4) Start stack using the pre-built images
             docker compose up -d --no-build
             sleep 10
+          '''
+        }
+      }
+    }
 
+    stage('Test') {
+      steps {
+        script {
+          sh '''
             # Acceptance tests
             curl -f http://localhost:8080/api/v1/movies
             curl -f http://localhost:8080/api/v1/casts
