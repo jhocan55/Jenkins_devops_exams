@@ -30,6 +30,7 @@ pipeline {
             # 4) Start stack using the pre-built images
             docker compose up -d --no-build
             sleep 10
+            
           '''
         }
       }
