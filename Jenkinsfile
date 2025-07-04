@@ -59,14 +59,18 @@ EOF
     stage('Deploy to Dev') {
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
-          sh """
+          sh '''
+            # 1) Helm upgrade/install
             helm upgrade --install fastapiapp charts \
               --namespace dev \
-              --kubeconfig "$KUBE_CFG" -n dev port-forward svc/fastapiapp 8081:80\
+              --kubeconfig "$KUBE_CFG" \
               -f charts/values-dev.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
-            """
+
+            # 2) Port-forward into background
+            kubectl --kubeconfig "$KUBE_CFG" -n dev port-forward svc/fastapiapp 8081:80 &
+          '''
         }
       }
     }
