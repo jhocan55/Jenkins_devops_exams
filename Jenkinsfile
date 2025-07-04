@@ -57,47 +57,49 @@ EOF
     }
 
     stage('Deploy to Dev') {
-      environment { KUBECONFIG = credentials("config") }
       steps {
-        writeFile file: '.kube/config', text: "${KUBECONFIG}"
-        sh '''
-          helm upgrade --install fastapiapp charts \
-            --namespace dev \
-            --kubeconfig .kube/config \
-            --set movie.image.tag=${DOCKER_TAG} \
-            --set cast.image.tag=${DOCKER_TAG}
-        '''
+        // 'config' must be a Secret File credential in Jenkins
+        withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
+          sh '''
+            echo "Using kubeconfig at $KUBE_CFG"
+            helm upgrade --install fastapiapp charts \
+              --namespace dev \
+              --kubeconfig "$KUBE_CFG" \
+              --set movie.image.tag=${DOCKER_TAG} \
+              --set cast.image.tag=${DOCKER_TAG}
+          '''
+        }
       }
     }
 
     stage('Deploy to Staging') {
-      environment { KUBECONFIG = credentials("config") }
       steps {
-        writeFile file: '.kube/config', text: "${KUBECONFIG}"
-        sh '''
-          helm upgrade --install fastapiapp charts \
-            --namespace staging \
-            --kubeconfig .kube/config \
-            --set movie.image.tag=${DOCKER_TAG} \
-            --set cast.image.tag=${DOCKER_TAG}
-        '''
+        withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
+          sh '''
+            helm upgrade --install fastapiapp charts \
+              --namespace staging \
+              --kubeconfig "$KUBE_CFG" \
+              --set movie.image.tag=${DOCKER_TAG} \
+              --set cast.image.tag=${DOCKER_TAG}
+          '''
+        }
       }
     }
 
     stage('Deploy to Prod') {
-      environment { KUBECONFIG = credentials("config") }
       steps {
         timeout(time: 15, unit: 'MINUTES') {
-          input message: 'Approve production deploy?', ok: 'Yes'
+          input message: 'Approve prod deploy?', ok: 'Yes'
         }
-        writeFile file: '.kube/config', text: "${KUBECONFIG}"
-        sh '''
-          helm upgrade --install fastapiapp charts \
-            --namespace prod \
-            --kubeconfig .kube/config \
-            --set movie.image.tag=${DOCKER_TAG} \
-            --set cast.image.tag=${DOCKER_TAG}
-        '''
+        withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
+          sh '''
+            helm upgrade --install fastapiapp charts \
+              --namespace prod \
+              --kubeconfig "$KUBE_CFG" \
+              --set movie.image.tag=${DOCKER_TAG} \
+              --set cast.image.tag=${DOCKER_TAG}
+          '''
+        }
       }
     }
   }
