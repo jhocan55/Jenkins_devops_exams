@@ -69,19 +69,26 @@ EOF
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
           sh '''
+            # 1) Helm upgrade *and* wait up to 2m for pods to be ready
             helm upgrade --install fastapiapp charts \
               --namespace dev \
               --kubeconfig "$KUBE_CFG" \
+              --wait --timeout 120s \
               -f charts/values-dev.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
 
-            # map svc port 80 → localhost:8081
+            # optional double check:
+            kubectl rollout status deployment/fastapiapp -n dev --kubeconfig "$KUBE_CFG" --timeout=2m
+
+            # 2) Port‐forward once everything is running
             kubectl --kubeconfig "$KUBE_CFG" -n dev port-forward svc/fastapiapp 8081:80 &
             PF=$!; sleep 5
 
+            # 3) Smoke test
             curl -f http://localhost:8081/api/v1/movies/docs
 
+            # 4) Clean up
             kill $PF
           '''
         }
