@@ -76,9 +76,12 @@ EOF
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
 
-            kubectl --kubeconfig "$KUBE_CFG" -n dev port-forward svc/fastapiapp 8081:8000 &
+            # map svc port 80 → localhost:8081
+            kubectl --kubeconfig "$KUBE_CFG" -n dev port-forward svc/fastapiapp 8081:80 &
             PF=$!; sleep 5
+
             curl -f http://localhost:8081/api/v1/movies/docs
+
             kill $PF
           '''
         }
@@ -96,9 +99,11 @@ EOF
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
 
-            kubectl --kubeconfig "$KUBE_CFG" -n qa port-forward svc/fastapiapp 8082:8000 &
+            kubectl --kubeconfig "$KUBE_CFG" -n qa port-forward svc/fastapiapp 8082:80 &
             PF=$!; sleep 5
+
             curl -f http://localhost:8082/api/v1/movies/docs
+
             kill $PF
           '''
         }
@@ -116,9 +121,11 @@ EOF
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
 
-            kubectl --kubeconfig "$KUBE_CFG" -n staging port-forward svc/fastapiapp 8083:8000 &
+            kubectl --kubeconfig "$KUBE_CFG" -n staging port-forward svc/fastapiapp 8083:80 &
             PF=$!; sleep 5
+
             curl -f http://localhost:8083/api/v1/movies/docs
+
             kill $PF
           '''
         }
@@ -139,9 +146,11 @@ EOF
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
 
-            kubectl --kubeconfig "$KUBE_CFG" -n prod port-forward svc/fastapiapp 8084:8000 &
+            kubectl --kubeconfig "$KUBE_CFG" -n prod port-forward svc/fastapiapp 8084:80 &
             PF=$!; sleep 5
+
             curl -f http://localhost:8084/api/v1/movies/docs
+
             kill $PF
           '''
         }
