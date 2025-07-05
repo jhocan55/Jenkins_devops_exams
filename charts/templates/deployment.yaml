@@ -32,17 +32,17 @@ spec:
           image: "{{ .Values.movie.image.repository }}:{{ .Values.movie.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.movie.image.pullPolicy }}
           ports:
-            - name: http
+            - name: http-movie
               containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
           livenessProbe:
             httpGet:
               path: /api/v1/checkapi
-              port: http
+              port: http-movie
           readinessProbe:
             httpGet:
               path: /api/v1/checkapi
-              port: http
+              port: http-movie
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
@@ -52,17 +52,17 @@ spec:
           image: "{{ .Values.cast.image.repository }}:{{ .Values.cast.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.cast.image.pullPolicy }}
           ports:
-            - name: http
+            - name: http-cast
               containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
           livenessProbe:
             httpGet:
               path: /api/v1/checkapi
-              port: http
+              port: http-cast
           readinessProbe:
             httpGet:
               path: /api/v1/checkapi
-              port: http
+              port: http-cast
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
