@@ -96,7 +96,6 @@ EOF
         }
       }
     }
-
     stage('Deploy to QA') {
       steps {
         withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
