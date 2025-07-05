@@ -6,23 +6,20 @@ services:
     image: "${DOCKER_ID}/movie_service:${DOCKER_TAG}"
     command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
     ports:
-      - 8001:8000
+      - "8001:8000"
     environment:
       - DATABASE_URI=postgresql://movie_db_username:movie_db_password@movie_db/movie_db_dev
-      - CAST_SERVICE_HOST_URL=http://cast_service:8000/api/v1/casts/
-    depends_on:
-      - movie_db
+      - CAST_SERVICE_HOST_URL=http://cast_service:8000/api/v1/casts
 
   cast_service:
     build: ./cast-service
     image: "${DOCKER_ID}/cast_service:${DOCKER_TAG}"
     command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
     ports:
-      - 8002:8000
+      - "8002:8000"
     environment:
       - DATABASE_URI=postgresql://cast_db_username:cast_db_password@cast_db/cast_db_dev
-    depends_on:
-      - cast_db
+      - MOVIE_SERVICE_HOST_URL=http://movie_service:8000/api/v1/movies
 
   movie_db:
     image: postgres:12.1-alpine
