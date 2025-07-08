@@ -13,20 +13,29 @@ pipeline {
       steps {
         script {
           sh '''
-            set -eux
+            docker version
+            docker info
+            docker compose version
+            curl --version
+            jq --version
 
-            # write .env so compose picks up DOCKER_ID/DOCKER_TAG
-            cat > .env <<EOF
-DOCKER_ID=${DOCKER_ID}
-DOCKER_TAG=${DOCKER_TAG}
-EOF
-
-            echo ">>> Tear down old stack"
-            docker compose down --remove-orphans || true
-
-            echo ">>> Build & bring up all services in one step"
-            docker compose up -d --build
-            sleep 20
+          '''
+        }
+      }
+    }
+    stage('Prune Docker data') {
+      steps {
+        sh '''
+          docker system prune -a --volumes -f'
+        '''
+      }
+    }
+    stage('Start Containers') {
+      steps {
+        script {
+          sh '''
+            docker compose up -d --no-color --wait
+            docker compose ps
           '''
         }
       }
@@ -35,8 +44,8 @@ EOF
     stage('Test Acceptance') {
       steps {
         sh '''
-          curl -f http://localhost:8001/api/v1/movies
-          curl -f http://localhost:8002/api/v1/casts
+          curl -f http://localhost:8080/api/v1/movies
+          curl -f http://localhost:8080/api/v1/casts
         '''
       }
     }
