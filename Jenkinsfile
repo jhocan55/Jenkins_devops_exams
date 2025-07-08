@@ -64,68 +64,78 @@ pipeline {
     }
 
     stage('Deploy to Dev') {
-      steps {
-        withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
-          sh """
-            helm upgrade --install fastapiapp charts \
-              --namespace dev \
-              --kubeconfig "\$KUBE_CFG" \
-              -f charts/values.yaml \
-              --set movie.image.tag=$DOCKER_TAG \
-              --set cast.image.tag=$DOCKER_TAG \
-              --set movie.service.type=NodePort \
-              --set cast.service.type=NodePort
-          """
+        environment {
+            KUBECONFIG = credentials("config")
         }
-      }
+        steps {
+            script {
+                sh '''
+                rm -Rf .kube
+                mkdir .kube
+                cat $KUBECONFIG > .kube/config
+                cp charts/values.yaml values.yml
+                sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
+                helm upgrade --install fastapiapp charts --values=values.yml --namespace dev
+                '''
+            }
+        }
     }
 
     stage('Deploy to QA') {
-      steps {
-        withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
-          sh """
-            helm upgrade --install fastapiapp charts \
-              --namespace qa \
-              --kubeconfig "\$KUBE_CFG" \
-              -f charts/values.yaml \
-              --set movie.image.tag=$DOCKER_TAG \
-              --set cast.image.tag=$DOCKER_TAG
-          """
+        environment {
+            KUBECONFIG = credentials("config")
         }
-      }
+        steps {
+            script {
+                sh '''
+                rm -Rf .kube
+                mkdir .kube
+                cat $KUBECONFIG > .kube/config
+                cp charts/values.yaml values.yml
+                sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
+                helm upgrade --install fastapiapp charts --values=values.yml --namespace qa
+                '''
+            }
+        }
     }
 
     stage('Deploy to Staging') {
-      steps {
-        withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
-          sh """
-            helm upgrade --install fastapiapp charts \
-              --namespace staging \
-              --kubeconfig "\$KUBE_CFG" \
-              -f charts/values.yaml \
-              --set movie.image.tag=$DOCKER_TAG \
-              --set cast.image.tag=$DOCKER_TAG
-          """
+        environment {
+            KUBECONFIG = credentials("config")
         }
-      }
+        steps {
+            script {
+                sh '''
+                rm -Rf .kube
+                mkdir .kube
+                cat $KUBECONFIG > .kube/config
+                cp charts/values.yaml values.yml
+                sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
+                helm upgrade --install fastapiapp charts --values=values.yml --namespace staging
+                '''
+            }
+        }
     }
 
     stage('Deploy to Prod') {
-      steps {
-        timeout(time: 15, unit: 'MINUTES') {
-          input message: 'Approve prod deploy?', ok: 'Yes'
+        environment {
+            KUBECONFIG = credentials("config")
         }
-        withCredentials([file(credentialsId: 'config', variable: 'KUBE_CFG')]) {
-          sh """
-            helm upgrade --install fastapiapp charts \
-              --namespace prod \
-              --kubeconfig "\$KUBE_CFG" \
-              -f charts/values.yaml \
-              --set movie.image.tag=$DOCKER_TAG \
-              --set cast.image.tag=$DOCKER_TAG
-          """
+        steps {
+            timeout(time: 15, unit: "MINUTES") {
+                input message: 'Do you want to deploy in production ?', ok: 'Yes'
+            }
+            script {
+                sh '''
+                rm -Rf .kube
+                mkdir .kube
+                cat $KUBECONFIG > .kube/config
+                cp charts/values.yaml values.yml
+                sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
+                helm upgrade --install fastapiapp charts --values=values.yml --namespace prod
+                '''
+            }
         }
-      }
     }
   }
 
