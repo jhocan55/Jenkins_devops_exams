@@ -34,7 +34,6 @@ cast:
 #   repository: jhocan55/fastapiapp
 #   pullPolicy: IfNotPresent
 #   tag: "latest"
-
 imagePullSecrets: 
   - name: "regcred"
 nameOverride: ""
