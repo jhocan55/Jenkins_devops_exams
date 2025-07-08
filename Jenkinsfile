@@ -74,7 +74,7 @@ pipeline {
             helm upgrade --install fastapiapp charts \
               --namespace dev \
               --kubeconfig "$KUBE_CFG" \
-              -f charts/values-dev.yaml \
+              -f charts/values.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
             """
@@ -89,7 +89,7 @@ pipeline {
             helm upgrade --install fastapiapp charts \
               --namespace qa \
               --kubeconfig "$KUBE_CFG" \
-              -f charts/values-qa.yaml \
+              -f charts/values.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
             """
@@ -104,7 +104,7 @@ pipeline {
             helm upgrade --install fastapiapp charts \
               --namespace staging \
               --kubeconfig "$KUBE_CFG" \
-              -f charts/values-staging.yaml \
+              -f charts/values.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
             """
@@ -122,7 +122,7 @@ pipeline {
             helm upgrade --install fastapiapp charts \
               --namespace prod \
               --kubeconfig "$KUBE_CFG" \
-              -f charts/values-prod.yaml \
+              -f charts/values.yaml \
               --set movie.image.tag=${DOCKER_TAG} \
               --set cast.image.tag=${DOCKER_TAG}
             """
