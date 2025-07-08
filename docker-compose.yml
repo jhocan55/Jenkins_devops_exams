@@ -53,7 +53,7 @@ services:
     depends_on:
       - cast_service
       - movie_service
-      
+
 volumes:
   postgres_data_movie:
   postgres_data_cast:
