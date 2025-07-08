@@ -75,25 +75,11 @@ pipeline {
                 cp charts/values.yaml values.yml
                 sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
                 helm upgrade --install fastapiapp charts --values=values.yml --namespace dev
-
-                echo "=== DEBUG: Service Info ==="
-                kubectl get svc -n dev -o wide
-
-                echo "=== DEBUG: Endpoints ==="
-                kubectl get endpoints -n dev
-
-                echo "=== DEBUG: Pods ==="
-                kubectl get pods -n dev -o wide
-
-                echo "=== DEBUG: Try port-forward and curl ==="
-                kubectl port-forward svc/fastapiapp-movie 18087:80 -n dev &
-                sleep 5
-                curl -v http://localhost:18087/api/v1/movies/ || echo "curl failed"
-                pkill -f "kubectl port-forward svc/fastapiapp-movie"
                 '''
             }
         }
     }
+
     stage('Deploy to QA') {
         environment {
             KUBECONFIG = credentials("config")
