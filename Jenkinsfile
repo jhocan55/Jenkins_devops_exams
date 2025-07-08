@@ -59,6 +59,8 @@ pipeline {
           echo "$DOCKER_PASS" | docker login -u "$DOCKER_ID" --password-stdin
 
           echo ">>> Pushing images built by Compose"
+          docker tag datascientest-ci-cd-exam-movie_service ${MOVIE_IMAGE}
+          docker tag datascientest-ci-cd-exam-cast_service ${CAST_IMAGE}
           docker push ${MOVIE_IMAGE}
           docker push ${CAST_IMAGE}
         '''
