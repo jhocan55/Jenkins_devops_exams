@@ -94,7 +94,6 @@ pipeline {
             }
         }
     }
-
     stage('Deploy to QA') {
         environment {
             KUBECONFIG = credentials("config")
