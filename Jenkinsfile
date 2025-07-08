@@ -115,10 +115,31 @@ pipeline {
         }
     }
 
+    // stage('Deploy to Prod') {
+    //     environment {
+    //         KUBECONFIG = credentials("config")
+    //     }
+    //     steps {
+    //         timeout(time: 15, unit: "MINUTES") {
+    //             input message: 'Do you want to deploy in production ?', ok: 'Yes'
+    //         }
+    //         script {
+    //             sh '''
+    //             rm -Rf .kube
+    //             mkdir .kube
+    //             cat $KUBECONFIG > .kube/config
+    //             cp charts/values-prod.yaml values.yml
+    //             sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
+    //             helm upgrade --install fastapiapp charts --values=values.yml --namespace prod
+    //             '''
+    //         }
+    //     }
+    // }
+
     stage('Deploy to Prod') {
-        environment {
-            KUBECONFIG = credentials("config")
-        }
+      environment {
+          KUBECONFIG = credentials("config")
+      }
         steps {
             timeout(time: 15, unit: "MINUTES") {
                 input message: 'Do you want to deploy in production ?', ok: 'Yes'
@@ -131,6 +152,31 @@ pipeline {
                 cp charts/values-prod.yaml values.yml
                 sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
                 helm upgrade --install fastapiapp charts --values=values.yml --namespace prod
+
+                echo "=== DEBUG: Node IPs ==="
+                kubectl get nodes -o wide
+
+                echo "=== DEBUG: Service Info ==="
+                kubectl get svc -n prod -o wide
+
+                echo "=== DEBUG: Endpoints ==="
+                kubectl get endpoints -n prod
+
+                echo "=== TEST COMMANDS ==="
+                echo "To test movie service: curl http://<NODE-IP>:30037/api/v1/movies/"
+                echo "To test cast service:  curl http://<NODE-IP>:30038/api/v1/casts/"
+
+                echo "=== TRY PORT-FORWARD AND CURL (movie) ==="
+                kubectl port-forward svc/fastapiapp-movie 18087:80 -n prod &
+                sleep 5
+                curl -v http://localhost:18087/api/v1/movies/ || echo "curl failed"
+                pkill -f "kubectl port-forward svc/fastapiapp-movie"
+
+                echo "=== TRY PORT-FORWARD AND CURL (cast) ==="
+                kubectl port-forward svc/fastapiapp-cast 18088:80 -n prod &
+                sleep 5
+                curl -v http://localhost:18088/api/v1/casts/ || echo "curl failed"
+                pkill -f "kubectl port-forward svc/fastapiapp-cast"
                 '''
             }
         }
