@@ -50,7 +50,7 @@ pipeline {
       }
       steps {
         sh """
-          echo "\$DOCKER_PASS" | docker login -u "$DOCKER_ID" --password-stdin
+          docker login -u $DOCKER_ID -p $DOCKER_PASS
 
           echo ">>> Pushing images built by Compose"
           docker tag datascientest-ci-cd-exam-movie_service $MOVIE_IMAGE
