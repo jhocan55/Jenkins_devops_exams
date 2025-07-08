@@ -10,6 +10,7 @@ movie:
     pullPolicy: IfNotPresent
     tag: "latest"
   service:
+    type: NodePort
     port: 80
     targetPort: 8000
     nodePort: 30007
@@ -20,6 +21,7 @@ cast:
     pullPolicy: IfNotPresent
     tag: "latest"
   service:
+    type: NodePort
     port: 80
     targetPort: 8000
     nodePort: 30008

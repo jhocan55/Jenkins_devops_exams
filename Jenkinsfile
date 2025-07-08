@@ -2,42 +2,37 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_ID            = "jhocan55"
-    DOCKER_TAG           = "v.${BUILD_ID}.0"
-    MOVIE_IMAGE          = "${DOCKER_ID}/movie_service:${DOCKER_TAG}"
-    CAST_IMAGE           = "${DOCKER_ID}/cast_service:${DOCKER_TAG}"
+    DOCKER_ID    = "jhocan55"
+    DOCKER_TAG   = "v.${BUILD_ID}.0"
+    MOVIE_IMAGE  = "${DOCKER_ID}/movie_service:${DOCKER_TAG}"
+    CAST_IMAGE   = "${DOCKER_ID}/cast_service:${DOCKER_TAG}"
   }
 
   stages {
     stage('Build & Start Services') {
       steps {
-        script {
-          sh '''
-            docker version
-            docker info
-            docker compose version
-            curl --version
-            jq --version
-
-          '''
-        }
-      }
-    }
-    stage('Prune Docker data') {
-      steps {
         sh '''
-          docker system prune -a --volumes -f
+          docker version
+          docker info
+          docker compose version
+          curl --version
+          jq --version
         '''
       }
     }
+
+    stage('Prune Docker data') {
+      steps {
+        sh 'docker system prune -a --volumes -f'
+      }
+    }
+
     stage('Start Containers') {
       steps {
-        script {
-          sh '''
-            docker compose up -d --no-color --wait
-            docker compose ps
-          '''
-        }
+        sh '''
+          docker compose up -d --no-color --wait
+          docker compose ps
+        '''
       }
     }
 
@@ -55,15 +50,16 @@ pipeline {
         DOCKER_PASS = credentials("DOCKER_HUB_PASS")
       }
       steps {
-        sh '''
-          echo "$DOCKER_PASS" | docker login -u "$DOCKER_ID" --password-stdin
+        sh """
+          echo "\$DOCKER_PASS" | docker login -u "$DOCKER_ID" --password-stdin
 
           echo ">>> Pushing images built by Compose"
-          docker tag datascientest-ci-cd-exam-movie_service ${MOVIE_IMAGE}
-          docker tag datascientest-ci-cd-exam-cast_service ${CAST_IMAGE}
-          docker push ${MOVIE_IMAGE}
-          docker push ${CAST_IMAGE}
-        '''
+          docker tag datascientest-ci-cd-exam-movie_service $MOVIE_IMAGE
+          docker tag datascientest-ci-cd-exam-cast_service $CAST_IMAGE
+
+          docker push $MOVIE_IMAGE
+          docker push $CAST_IMAGE
+        """
       }
     }
 
@@ -73,11 +69,13 @@ pipeline {
           sh """
             helm upgrade --install fastapiapp charts \
               --namespace dev \
-              --kubeconfig "$KUBE_CFG" \
+              --kubeconfig "\$KUBE_CFG" \
               -f charts/values.yaml \
-              --set movie.image.tag=${DOCKER_TAG} \
-              --set cast.image.tag=${DOCKER_TAG}
-            """
+              --set movie.image.tag=$DOCKER_TAG \
+              --set cast.image.tag=$DOCKER_TAG \
+              --set movie.service.type=NodePort \
+              --set cast.service.type=NodePort
+          """
         }
       }
     }
@@ -88,11 +86,11 @@ pipeline {
           sh """
             helm upgrade --install fastapiapp charts \
               --namespace qa \
-              --kubeconfig "$KUBE_CFG" \
+              --kubeconfig "\$KUBE_CFG" \
               -f charts/values.yaml \
-              --set movie.image.tag=${DOCKER_TAG} \
-              --set cast.image.tag=${DOCKER_TAG}
-            """
+              --set movie.image.tag=$DOCKER_TAG \
+              --set cast.image.tag=$DOCKER_TAG
+          """
         }
       }
     }
@@ -103,11 +101,11 @@ pipeline {
           sh """
             helm upgrade --install fastapiapp charts \
               --namespace staging \
-              --kubeconfig "$KUBE_CFG" \
+              --kubeconfig "\$KUBE_CFG" \
               -f charts/values.yaml \
-              --set movie.image.tag=${DOCKER_TAG} \
-              --set cast.image.tag=${DOCKER_TAG}
-            """
+              --set movie.image.tag=$DOCKER_TAG \
+              --set cast.image.tag=$DOCKER_TAG
+          """
         }
       }
     }
@@ -121,11 +119,11 @@ pipeline {
           sh """
             helm upgrade --install fastapiapp charts \
               --namespace prod \
-              --kubeconfig "$KUBE_CFG" \
+              --kubeconfig "\$KUBE_CFG" \
               -f charts/values.yaml \
-              --set movie.image.tag=${DOCKER_TAG} \
-              --set cast.image.tag=${DOCKER_TAG}
-            """
+              --set movie.image.tag=$DOCKER_TAG \
+              --set cast.image.tag=$DOCKER_TAG
+          """
         }
       }
     }
@@ -133,9 +131,9 @@ pipeline {
 
   post {
     failure {
-      mail to:    "jhon.castaneda.angulo@gmail.com",
+      mail to: "jhon.castaneda.angulo@gmail.com",
            subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
-           body:    "See ${env.BUILD_URL}"
+           body: "See ${env.BUILD_URL}"
     }
   }
 }
