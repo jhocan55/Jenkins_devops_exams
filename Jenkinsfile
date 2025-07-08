@@ -26,7 +26,6 @@ pipeline {
         sh 'docker system prune -a --volumes -f'
       }
     }
-
     stage('Start Containers') {
       steps {
         sh '''
