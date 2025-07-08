@@ -1,5 +1,5 @@
 #!/bin/bash
-# filepath: /home/alex/Documents/jenkins/Jenkins_exam/Jenkins_devops_exams/api_test.sh
+
 
 BASE_URL="http://localhost:8081/api/v1"
 
