@@ -4,17 +4,11 @@
 
 replicaCount: 3
 
-movie:
-  image:
-    repository: jhocan55/movie_service
-    pullPolicy: IfNotPresent
-    tag: ""
 
-cast:
-  image:
-    repository: jhocan55/cast_service
-    pullPolicy: IfNotPresent
-    tag: ""
+image:
+  repository: jhocan55/fastapiapp
+  pullPolicy: IfNotPresent
+  tag: "latest"
 
 imagePullSecrets: 
   - name: "regcred"
@@ -46,7 +40,7 @@ securityContext: {}
 service:
   type: NodePort
   port: 80
-  nodePort: null 
+  nodePort: 30007  
   targetPort: 8000
 
 ingress:

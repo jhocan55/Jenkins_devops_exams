@@ -28,12 +28,14 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: movie-service
-          image: "{{ .Values.movie.image.repository }}:{{ .Values.movie.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.movie.image.pullPolicy }}
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.service.targetPort }}
+              containerPort: 8000
               protocol: TCP
           livenessProbe:
             httpGet:
@@ -43,28 +45,6 @@ spec:
             httpGet:
               path: /api/v1/checkapi
               port: http
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-
-        - name: cast-service
-          image: "{{ .Values.cast.image.repository }}:{{ .Values.cast.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.cast.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: {{ .Values.service.targetPort }}
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /api/v1/checkapi
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /api/v1/checkapi
-              port: http
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
