@@ -13,7 +13,7 @@ movie:
     type: NodePort
     port: 80
     targetPort: 8000
-    # nodePort: 30007
+    nodePort: 30007
   env:
     DATABASE_URI: "postgresql://movie_db_username:movie_db_password@movie_db/movie_db_dev"
     CAST_SERVICE_HOST_URL: "http://cast_service:8000/api/v1/casts/"
@@ -27,7 +27,7 @@ cast:
     type: NodePort
     port: 80
     targetPort: 8000
-    # nodePort: 30008
+    nodePort: 30008
   env:
     DATABASE_URI: "postgresql://cast_db_username:cast_db_password@cast_db/cast_db_dev"
 # image:

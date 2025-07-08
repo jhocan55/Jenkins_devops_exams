@@ -71,7 +71,7 @@ pipeline {
                 rm -Rf .kube
                 mkdir .kube
                 cat $KUBECONFIG > .kube/config
-                cp charts/values.yaml values.yml
+                cp charts/values-dev.yaml values.yml
                 sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
                 helm upgrade --install fastapiapp charts --values=values.yml --namespace dev
                 '''
@@ -89,7 +89,7 @@ pipeline {
                 rm -Rf .kube
                 mkdir .kube
                 cat $KUBECONFIG > .kube/config
-                cp charts/values.yaml values.yml
+                cp charts/values-qa.yaml values.yml
                 sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
                 helm upgrade --install fastapiapp charts --values=values.yml --namespace qa
                 '''
@@ -107,7 +107,7 @@ pipeline {
                 rm -Rf .kube
                 mkdir .kube
                 cat $KUBECONFIG > .kube/config
-                cp charts/values.yaml values.yml
+                cp charts/values-staging.yaml values.yml
                 sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
                 helm upgrade --install fastapiapp charts --values=values.yml --namespace staging
                 '''
@@ -128,7 +128,7 @@ pipeline {
                 rm -Rf .kube
                 mkdir .kube
                 cat $KUBECONFIG > .kube/config
-                cp charts/values.yaml values.yml
+                cp charts/values-prod.yaml values.yml
                 sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
                 helm upgrade --install fastapiapp charts --values=values.yml --namespace prod
                 '''
