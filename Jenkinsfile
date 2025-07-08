@@ -44,8 +44,8 @@ pipeline {
     stage('Test Acceptance') {
       steps {
         sh '''
-          curl -f http://localhost:8080/api/v1/movies
-          curl -f http://localhost:8080/api/v1/casts
+          curl -f http://localhost:8081/api/v1/movies
+          curl -f http://localhost:8081/api/v1/casts
         '''
       }
     }
