@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fastapiapp.fullname" . }}-movie
+  labels:
+    app: {{ include "fastapiapp.fullname" . }}-movie
+    {{- include "fastapiapp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.movie.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ include "fastapiapp.fullname" . }}-movie
+  template:
+    metadata:
+      labels:
+        app: {{ include "fastapiapp.fullname" . }}-movie
+    spec:
+      containers:
+        - name: movie
+          image: "{{ .Values.movie.image.repository }}:{{ .Values.movie.image.tag }}"
+          imagePullPolicy: {{ .Values.movie.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URI
+              value: {{ .Values.movie.env.DATABASE_URI | quote }}
+            - name: CAST_SERVICE_HOST_URL
+              value: {{ .Values.movie.env.CAST_SERVICE_HOST_URL | quote }}
+          resources:
+            {{- toYaml .Values.movie.resources | nindent 12 }}

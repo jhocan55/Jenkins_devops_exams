@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fastapiapp.fullname" . }}-cast
+  labels:
+    app: {{ include "fastapiapp.fullname" . }}-cast
+    {{- include "fastapiapp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.cast.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ include "fastapiapp.fullname" . }}-cast
+  template:
+    metadata:
+      labels:
+        app: {{ include "fastapiapp.fullname" . }}-cast
+    spec:
+      containers:
+        - name: cast
+          image: "{{ .Values.cast.image.repository }}:{{ .Values.cast.image.tag }}"
+          imagePullPolicy: {{ .Values.cast.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URI
+              value: {{ .Values.cast.env.DATABASE_URI | quote }}
+          resources:
+            {{- toYaml .Values.cast.resources | nindent 12 }}

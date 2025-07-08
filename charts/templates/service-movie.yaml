@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fastapiapp.fullname" . }}-movie
+  labels:
+    {{- include "fastapiapp.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.movie.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.movie.service.port }}
+      targetPort: {{ .Values.movie.service.targetPort }}
+      nodePort: {{ .Values.movie.service.nodePort | default "" }}
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ include "fastapiapp.fullname" . }}-movie
