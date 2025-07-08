@@ -24,7 +24,7 @@ spec:
           env:
             - name: DATABASE_URI
               value: {{ .Values.cast.env.DATABASE_URI | quote }}
-          {{- if .Values.cast.resources }}
-          resources:
-            {{- toYaml .Values.cast.resources | nindent 12 }}
-          {{- end }}
+          # {{- if .Values.cast.resources }}
+          #   resources:
+          #   {{- toYaml .Values.cast.resources | nindent 12 }}
+          # {{- end }}

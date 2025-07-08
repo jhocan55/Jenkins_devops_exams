@@ -26,5 +26,7 @@ spec:
               value: {{ .Values.movie.env.DATABASE_URI | quote }}
             - name: CAST_SERVICE_HOST_URL
               value: {{ .Values.movie.env.CAST_SERVICE_HOST_URL | quote }}
-          resources:
-            {{- toYaml .Values.movie.resources | nindent 12 }}
+          # resources:
+          #   {{- with .Values.movie.resources }}
+          #   {{- toYaml . | nindent 12 }}
+          #   {{- end }}
