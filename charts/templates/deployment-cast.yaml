@@ -23,7 +23,8 @@ spec:
             - containerPort: 8000
           env:
             - name: DATABASE_URI
-              value: {{ .Values.cast.env.DATABASE_URI | quote }}              
+              value: {{ .Values.cast.env.DATABASE_URI | quote }}    
+                        
           # {{- if .Values.cast.resources }}
           #   resources:
           #   {{- toYaml .Values.cast.resources | nindent 12 }}
