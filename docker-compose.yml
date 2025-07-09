@@ -13,12 +13,6 @@ services:
       - CAST_SERVICE_HOST_URL=http://cast_service:8000/api/v1/casts/
     depends_on:
       - movie_db
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/movies/"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 5s
   movie_db:
     image: postgres:12.1-alpine
     volumes:
@@ -39,12 +33,6 @@ services:
       - DATABASE_URI=postgresql://cast_db_username:cast_db_password@cast_db/cast_db_dev
     depends_on:
       - cast_db
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/casts/"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 5s
 
   cast_db:
     image: postgres:12.1-alpine
@@ -54,7 +42,6 @@ services:
       - POSTGRES_USER=cast_db_username
       - POSTGRES_PASSWORD=cast_db_password
       - POSTGRES_DB=cast_db_dev
-
   nginx:
     image: nginx:latest
     ports:
@@ -62,10 +49,9 @@ services:
     volumes:
       - ./nginx_config.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      movie_service:
-        condition: service_healthy
-      cast_service:
-        condition: service_healthy
+      - cast_service
+      - movie_service
+
 volumes:
   postgres_data_movie:
   postgres_data_cast:
