@@ -157,22 +157,22 @@ pipeline {
                   kubectl get pods -n staging -o wide
 
                   echo "=== DEBUG: Pod Env for movie ==="
-                  kubectl get pods -n staging -l app.kubernetes.io/name=movie -o json | jq '.items[].spec.containers[].env'
+                  kubectl get pods -n staging -l app=fastapiapp-movie -o json | jq '.items[].spec.containers[].env'
 
                   echo "=== DEBUG: Pod Env for cast ==="
-                  kubectl get pods -n staging -l app.kubernetes.io/name=cast -o json | jq '.items[].spec.containers[].env'
+                  kubectl get pods -n staging -l app=fastapiapp-cast -o json | jq '.items[].spec.containers[].env'
 
                   echo "=== DEBUG: Pod Logs (movie) ==="
-                  kubectl logs -n staging -l app.kubernetes.io/name=movie --tail=40 || true
+                  kubectl logs -n staging -l app=fastapiapp-movie --tail=40 || true
 
                   echo "=== DEBUG: Pod Logs (cast) ==="
-                  kubectl logs -n staging -l app.kubernetes.io/name=cast --tail=40 || true
+                  kubectl logs -n staging -l app=fastapiapp-cast --tail=40 || true
 
                   echo "=== DEBUG: Pod Describe (movie) ==="
-                  kubectl describe pods -n staging -l app.kubernetes.io/name=movie || true
+                  kubectl describe pods -n staging -l app=fastapiapp-movie || true
 
                   echo "=== DEBUG: Pod Describe (cast) ==="
-                  kubectl describe pods -n staging -l app.kubernetes.io/name=cast || true
+                  kubectl describe pods -n staging -l app=fastapiapp-cast || true
                   '''
               }
           }
