@@ -161,27 +161,22 @@ pipeline {
         }
     }
   }
-  post {
-    // failure {
-    //   catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-    //     mail to: "jhon.castaneda.angulo@gmail.com",
-    //          subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
-    //          body: "See ${env.BUILD_URL}"      
-    //   }
-    // }            
-    failure {
-      catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-      mail to: "jhon.castaneda.angulo@gmail.com",
-         subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
-         body: "See ${env.BUILD_URL}"      
-      sh 'docker compose down --remove-orphans --volumes'
-      sh 'docker system prune -a --volumes -f'
-      sh 'docker volume prune -f'
-      sh 'docker network prune -f'
-      sh 'docker container prune -f'
-      sh 'docker ps -a'
-      sh 'docker rmi -f $(docker images -q) 2>/dev/null || true'
-      echo "Cleaning workspace and removing Docker images"
+    post {
+      failure {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+        mail to: "jhon.castaneda.angulo@gmail.com",
+          subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
+          body: "See ${env.BUILD_URL}"
+        sh '''
+          docker compose down --remove-orphans --volumes
+          docker system prune -a --volumes -f
+          docker volume prune -f
+          docker network prune -f
+          docker container prune -f
+          docker ps -a
+          docker rmi -f $(docker images -q) 2>/dev/null || true
+          echo "Cleaning workspace and removing Docker images"
+        '''
       }
     }
   }
