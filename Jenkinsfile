@@ -35,6 +35,7 @@ pipeline {
           docker ps -a
         '''
       }
+      
     }
 
     stage('Test Acceptance') {
