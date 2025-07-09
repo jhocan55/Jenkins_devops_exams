@@ -31,11 +31,9 @@ pipeline {
         sh '''
           docker compose up -d --no-color --wait
           docker compose ps
-          sleep 10
-          docker ps -a
         '''
       }
-      
+
     }
 
     stage('Test Acceptance') {
@@ -216,15 +214,15 @@ pipeline {
              body: "See ${env.BUILD_URL}"      
       }
     }
-    always {
-      sh 'docker compose down --remove-orphans --volumes'
-      sh 'docker system prune -a --volumes -f'
-      sh 'docker volume prune -f'
-      sh 'docker network prune -f'
-      sh 'docker container prune -f'
-      sh 'docker ps -a'
-      sh 'docker rmi -f $(docker images -q) 2>/dev/null || true'
-      echo "Cleaning workspace and removing Docker images"
-    }
+    // always {
+    //   sh 'docker compose down --remove-orphans --volumes'
+    //   sh 'docker system prune -a --volumes -f'
+    //   sh 'docker volume prune -f'
+    //   sh 'docker network prune -f'
+    //   sh 'docker container prune -f'
+    //   sh 'docker ps -a'
+    //   sh 'docker rmi -f $(docker images -q) 2>/dev/null || true'
+    //   echo "Cleaning workspace and removing Docker images"
+    // }
   }
 }
