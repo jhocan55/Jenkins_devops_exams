@@ -61,7 +61,7 @@ pipeline {
         """
       }
     }
-    
+
     stage('Deploy to Dev') {
         environment {
             KUBECONFIG = credentials("config")
@@ -109,29 +109,74 @@ pipeline {
         }
     }
 
-    stage('Deploy to Staging') {
-        environment {
-            KUBECONFIG = credentials("config")
-        }
-        steps {
-            script {
-                sh '''
-                rm -Rf .kube
-                mkdir .kube
-                cat $KUBECONFIG > .kube/config
-                cp charts/values-staging.yaml values.yml
-                sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
-                helm upgrade --install fastapiapp charts --values=values.yml --namespace staging
+    // stage('Deploy to Staging') {
+    //     environment {
+    //         KUBECONFIG = credentials("config")
+    //     }
+    //     steps {
+    //         script {
+    //             sh '''
+    //             rm -Rf .kube
+    //             mkdir .kube
+    //             cat $KUBECONFIG > .kube/config
+    //             cp charts/values-staging.yaml values.yml
+    //             sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
+    //             helm upgrade --install fastapiapp charts --values=values.yml --namespace staging
                 
-                echo "=== DEBUG: Node IPs ==="
-                kubectl get nodes -o wide
+    //             echo "=== DEBUG: Node IPs ==="
+    //             kubectl get nodes -o wide
 
-                echo "=== DEBUG: Service Info ==="
-                kubectl get svc -n staging -o wide 
-                '''
-            }
-        }
-    }
+    //             echo "=== DEBUG: Service Info ==="
+    //             kubectl get svc -n staging -o wide 
+    //             '''
+    //         }
+    //     }
+    // }
+
+    stage('Deploy to Staging') {
+    environment {
+        KUBECONFIG = credentials("config")
+          }
+          steps {
+              script {
+                  sh '''
+                  rm -Rf .kube
+                  mkdir .kube
+                  cat $KUBECONFIG > .kube/config
+                  cp charts/values-staging.yaml values.yml
+                  sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
+                  helm upgrade --install fastapiapp charts --values=values.yml --namespace staging
+
+                  echo "=== DEBUG: Node IPs ==="
+                  kubectl get nodes -o wide
+
+                  echo "=== DEBUG: Service Info ==="
+                  kubectl get svc -n staging -o wide 
+
+                  echo "=== DEBUG: Pod Info ==="
+                  kubectl get pods -n staging -o wide
+
+                  echo "=== DEBUG: Pod Env for movie ==="
+                  kubectl get pods -n staging -l app.kubernetes.io/name=movie -o json | jq '.items[].spec.containers[].env'
+
+                  echo "=== DEBUG: Pod Env for cast ==="
+                  kubectl get pods -n staging -l app.kubernetes.io/name=cast -o json | jq '.items[].spec.containers[].env'
+
+                  echo "=== DEBUG: Pod Logs (movie) ==="
+                  kubectl logs -n staging -l app.kubernetes.io/name=movie --tail=40 || true
+
+                  echo "=== DEBUG: Pod Logs (cast) ==="
+                  kubectl logs -n staging -l app.kubernetes.io/name=cast --tail=40 || true
+
+                  echo "=== DEBUG: Pod Describe (movie) ==="
+                  kubectl describe pods -n staging -l app.kubernetes.io/name=movie || true
+
+                  echo "=== DEBUG: Pod Describe (cast) ==="
+                  kubectl describe pods -n staging -l app.kubernetes.io/name=cast || true
+                  '''
+              }
+          }
+      }
 
     stage('Deploy to Prod') {
       environment {
