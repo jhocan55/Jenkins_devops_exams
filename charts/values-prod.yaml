@@ -16,7 +16,7 @@ movie:
     nodePort: 30037
   env:
     DATABASE_URI: "postgresql://movie_db_username:movie_db_password@movie-db/movie_db_prod"
-    CAST_SERVICE_HOST_URL: "http://fastapiapp-cast:8000/api/v1/casts/"
+    CAST_SERVICE_HOST_URL: "http://cast_service:8000/api/v1/casts/"
 
 cast:
   image:
