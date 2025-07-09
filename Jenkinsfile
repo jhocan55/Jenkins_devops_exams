@@ -168,8 +168,7 @@ pipeline {
     //          subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
     //          body: "See ${env.BUILD_URL}"      
     //   }
-    // }       
-     
+    // }            
     failure {
       catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
       mail to: "jhon.castaneda.angulo@gmail.com",
