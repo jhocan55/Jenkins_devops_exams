@@ -208,8 +208,19 @@ pipeline {
   post {
     failure {
       mail to: "jhon.castaneda.angulo@gmail.com",
-           subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
-           body: "See ${env.BUILD_URL}"
+         subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
+         body: "See ${env.BUILD_URL}"      
+    }
+    always {
+      sh 'docker compose down --remove-orphans --volumes'
+      sh 'docker system prune -a --volumes -f'
+      sh 'docker volume prune -f'
+      sh 'docker network prune -f'
+      sh 'docker container prune -f'
+      sh 'docker ps -a'
+      sh 'docker rmi -f $(docker images -q) 2>/dev/null || true'
+      cleanWs()
+      echo "Cleaning workspace and removing Docker images"
     }
   }
 }
