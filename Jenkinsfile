@@ -207,9 +207,11 @@ pipeline {
   }
   post {
     failure {
-      mail to: "jhon.castaneda.angulo@gmail.com",
-         subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
-         body: "See ${env.BUILD_URL}"      
+      catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+        mail to: "jhon.castaneda.angulo@gmail.com",
+             subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
+             body: "See ${env.BUILD_URL}"      
+      }
     }
     always {
       sh 'docker compose down --remove-orphans --volumes'
