@@ -13,7 +13,6 @@ services:
       - CAST_SERVICE_HOST_URL=http://cast_service:8000/api/v1/casts/
     depends_on:
       - movie_db
-
   movie_db:
     image: postgres:12.1-alpine
     volumes:
@@ -53,7 +52,7 @@ services:
     depends_on:
       - cast_service
       - movie_service
-      
+
 volumes:
   postgres_data_movie:
   postgres_data_cast:
