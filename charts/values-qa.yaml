@@ -15,7 +15,7 @@ movie:
     targetPort: 8000
     nodePort: 30017
   env:
-    DATABASE_URI: "postgresql://movie_db_username:movie_db_password@movie_db/movie_db_qa"
+    DATABASE_URI: "postgresql://movie_db_username:movie_db_password@movie-db/movie_db_qa"
     CAST_SERVICE_HOST_URL: "http://fastapiapp-cast:8000/api/v1/casts/"
 
 cast:
@@ -29,7 +29,7 @@ cast:
     targetPort: 8000
     nodePort: 30018
   env:
-    DATABASE_URI: "postgresql://cast_db_username:cast_db_password@cast_db/cast_db_qa"
+    DATABASE_URI: "postgresql://cast_db_username:cast_db_password@cast-db/cast_db_qa"
 # image:
 #   repository: jhocan55/fastapiapp
 #   pullPolicy: IfNotPresent
