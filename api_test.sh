@@ -1,20 +1,60 @@
 #!/bin/bash
 
+# Usage: ./api_test.sh [dev|qa|staging|prod]
+ENV=${1:-dev}
 
-BASE_URL="http://localhost:8081/api/v1"
+case "$ENV" in
+  dev)
+    BASE_URL="http://localhost:8081/api/v1"
+    ;;
+  qa)
+    BASE_URL="http://localhost:8082/api/v1"
+    ;;
+  staging)
+    BASE_URL="http://localhost:8083/api/v1"
+    ;;
+  prod)
+    BASE_URL="http://localhost:8084/api/v1"
+    ;;
+  *)
+    echo "Unknown environment: $ENV"
+    exit 1
+    ;;
+esac
+
+echo "Testing environment: $ENV"
+echo "BASE_URL: $BASE_URL"
 
 echo "=== Casts API ==="
 echo "1. Create two new casts"
-CAST_ID1=$(curl -s -X POST "$BASE_URL/casts/" \
+CAST_RESPONSE1=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/casts/" \
   -H "Content-Type: application/json" \
-  -d '{"name": "Leonardo DiCaprio"}' | jq '.id')
+  -d '{"name": "Leonardo DiCaprio"}')
+CAST_ID1=$(echo "$CAST_RESPONSE1" | head -n1 | jq '.id')
+CAST_STATUS1=$(echo "$CAST_RESPONSE1" | tail -n1)
+echo "Raw response for cast 1: $CAST_RESPONSE1"
+echo "HTTP status: $CAST_STATUS1"
 echo "Created cast 1 with ID: $CAST_ID1"
 
-CAST_ID2=$(curl -s -X POST "$BASE_URL/casts/" \
+CAST_RESPONSE2=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/casts/" \
   -H "Content-Type: application/json" \
-  -d '{"name": "Carrie-Anne Moss"}' | jq '.id')
+  -d '{"name": "Carrie-Anne Moss"}')
+CAST_ID2=$(echo "$CAST_RESPONSE2" | head -n1 | jq '.id')
+CAST_STATUS2=$(echo "$CAST_RESPONSE2" | tail -n1)
+echo "Raw response for cast 2: $CAST_RESPONSE2"
+echo "HTTP status: $CAST_STATUS2"
 echo "Created cast 2 with ID: $CAST_ID2"
 echo
+
+if [ "$CAST_STATUS1" != "200" ] && [ "$CAST_STATUS1" != "201" ]; then
+  echo "ERROR: Cast API not reachable or returned error. Exiting."
+  exit 1
+fi
+
+if [ "$CAST_STATUS2" != "200" ] && [ "$CAST_STATUS2" != "201" ]; then
+  echo "ERROR: Cast API not reachable or returned error. Exiting."
+  exit 1
+fi
 
 echo "=== Movies API ==="
 echo "2. Create a new movie using both cast IDs"
@@ -24,7 +64,7 @@ MOVIE_PAYLOAD=$(jq -n \
   --argjson genres '["Sci-Fi", "Action"]' \
   --argjson casts_id "[$CAST_ID1, $CAST_ID2]" \
   '{name: $name, plot: $plot, genres: $genres, casts_id: $casts_id}')
-MOVIE_RESPONSE=$(curl -s -X POST "$BASE_URL/movies/" \
+MOVIE_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/movies/" \
   -H "Content-Type: application/json" \
   -d "$MOVIE_PAYLOAD")
 echo "POST /movies/ response:"
