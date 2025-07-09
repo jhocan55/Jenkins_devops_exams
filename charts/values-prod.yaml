@@ -30,6 +30,7 @@ cast:
     nodePort: 30038
   env:
     DATABASE_URI: "postgresql://cast_db_username:cast_db_password@cast-db/cast_db_prod"
+    
 # image:
 #   repository: jhocan55/fastapiapp
 #   pullPolicy: IfNotPresent
