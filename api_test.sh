@@ -45,7 +45,6 @@ echo "Raw response for cast 2: $CAST_RESPONSE2"
 echo "HTTP status: $CAST_STATUS2"
 echo "Created cast 2 with ID: $CAST_ID2"
 echo
-
 if [ "$CAST_STATUS1" != "200" ] && [ "$CAST_STATUS1" != "201" ]; then
   echo "ERROR: Cast API not reachable or returned error. Exiting."
   exit 1
