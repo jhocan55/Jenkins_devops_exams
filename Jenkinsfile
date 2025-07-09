@@ -44,41 +44,59 @@ pipeline {
       }
     }
 
+    // stage('Docker Push') {
+    //   environment {
+    //     DOCKER_PASS = credentials("DOCKER_HUB_PASS")
+    //   }
+    //   steps {
+    //     sh """
+    //       docker login -u $DOCKER_ID -p $DOCKER_PASS
+
+    //       echo ">>> Pushing images built by Compose"
+    //       docker tag datascientest-ci-cd-exam-movie_service $MOVIE_IMAGE
+    //       docker tag datascientest-ci-cd-exam-cast_service $CAST_IMAGE
+
+    //       docker push $MOVIE_IMAGE
+    //       docker push $CAST_IMAGE
+    //     """
+    //   }
+    // }
+
     stage('Docker Push') {
-      environment {
-        DOCKER_PASS = credentials("DOCKER_HUB_PASS")
-      }
-      steps {
-        sh """
-          docker login -u $DOCKER_ID -p $DOCKER_PASS
-
-          echo ">>> Pushing images built by Compose"
-          docker tag datascientest-ci-cd-exam-movie_service $MOVIE_IMAGE
-          docker tag datascientest-ci-cd-exam-cast_service $CAST_IMAGE
-
-          docker push $MOVIE_IMAGE
-          docker push $CAST_IMAGE
-
-          echo ">>> Verifying pushed images on Docker Hub"
-          MOVIE_TAG_FOUND=\$(curl -s https://hub.docker.com/v2/repositories/$DOCKER_ID/movie_service/tags/ | jq -r '.results[].name' | grep -w '${DOCKER_TAG}' || true)
-          CAST_TAG_FOUND=\$(curl -s https://hub.docker.com/v2/repositories/$DOCKER_ID/cast_service/tags/ | jq -r '.results[].name' | grep -w '${DOCKER_TAG}' || true)
-
-          if [ -z "\$MOVIE_TAG_FOUND" ]; then
-            echo "ERROR: Movie image tag ${DOCKER_TAG} not found on Docker Hub!"
-            exit 1
-          else
-            echo "Movie image tag ${DOCKER_TAG} is available on Docker Hub."
-          fi
-
-          if [ -z "\$CAST_TAG_FOUND" ]; then
-            echo "ERROR: Cast image tag ${DOCKER_TAG} not found on Docker Hub!"
-            exit 1
-          else
-            echo "Cast image tag ${DOCKER_TAG} is available on Docker Hub."
-          fi
-        """
-      }
+  environment {
+    DOCKER_PASS = credentials("DOCKER_HUB_PASS")
     }
+    steps {
+      sh """
+        docker login -u $DOCKER_ID -p $DOCKER_PASS
+
+        echo ">>> Pushing images built by Compose"
+        docker tag datascientest-ci-cd-exam-movie_service $MOVIE_IMAGE
+        docker tag datascientest-ci-cd-exam-cast_service $CAST_IMAGE
+
+        docker push $MOVIE_IMAGE
+        docker push $CAST_IMAGE
+
+        echo ">>> Verifying pushed images on Docker Hub"
+        MOVIE_TAG_FOUND=\$(curl -s https://hub.docker.com/v2/repositories/$DOCKER_ID/movie_service/tags/ | jq -r '.results[].name' | grep -w '${DOCKER_TAG}' || true)
+        CAST_TAG_FOUND=\$(curl -s https://hub.docker.com/v2/repositories/$DOCKER_ID/cast_service/tags/ | jq -r '.results[].name' | grep -w '${DOCKER_TAG}' || true)
+
+        if [ -z "\$MOVIE_TAG_FOUND" ]; then
+          echo "ERROR: Movie image tag ${DOCKER_TAG} not found on Docker Hub!"
+          exit 1
+        else
+          echo "Movie image tag ${DOCKER_TAG} is available on Docker Hub."
+        fi
+
+        if [ -z "\$CAST_TAG_FOUND" ]; then
+          echo "ERROR: Cast image tag ${DOCKER_TAG} not found on Docker Hub!"
+          exit 1
+        else
+          echo "Cast image tag ${DOCKER_TAG} is available on Docker Hub."
+        fi
+      """
+    }
+  }
     stage('Deploy to Dev') {
         environment {
             KUBECONFIG = credentials("config")
@@ -163,42 +181,12 @@ pipeline {
               rm -Rf .kube
               mkdir .kube
               cat $KUBECONFIG > .kube/config
-              cp charts/values-prod.yaml values.ymll values.yml
-              sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml         sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
-              helm upgrade --install fastapiapp charts --values=values.yml --namespace prod           helm upgrade --install fastapiapp charts --values=values.yml --namespace prod
-              
-              echo "=== DEBUG: Node IPs ==="              echo "=== DEBUG: Node IPs ==="
+              cp charts/values-prod.yaml values.yml
+              sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
+              helm upgrade --install fastapiapp charts --values=values.yml --namespace prod
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}  }    }           attachmentsPattern: logFilePath           body: "See ${env.BUILD_URL}",           subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",           to: "you@example.com",        emailext (        // Email the log file        archiveArtifacts artifacts: logFilePath, fingerprint: true        // Archive the log file        def logFilePath = logFile.getAbsolutePath()        def logFile = currentBuild.getLogFile()        def currentBuild = Jenkins.instance.getItemByFullName(env.JOB_NAME).getBuildByNumber(env.BUILD_ID.toInteger())      script {    always {  post {  }    }        }            }              '''              kubectl get svc -n prod -o wide               echo "=== DEBUG: Service Info ==="              kubectl get nodes -o wide              kubectl get nodes -o wide
+              echo "=== DEBUG: Node IPs ==="
+              kubectl get nodes -o wide
 
               echo "=== DEBUG: Service Info ==="
               kubectl get svc -n prod -o wide              
