@@ -219,7 +219,6 @@ pipeline {
       sh 'docker container prune -f'
       sh 'docker ps -a'
       sh 'docker rmi -f $(docker images -q) 2>/dev/null || true'
-      cleanWs()
       echo "Cleaning workspace and removing Docker images"
     }
   }
