@@ -110,74 +110,29 @@ pipeline {
         }
     }
 
-    // stage('Deploy to Staging') {
-    //     environment {
-    //         KUBECONFIG = credentials("config")
-    //     }
-    //     steps {
-    //         script {
-    //             sh '''
-    //             rm -Rf .kube
-    //             mkdir .kube
-    //             cat $KUBECONFIG > .kube/config
-    //             cp charts/values-staging.yaml values.yml
-    //             sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
-    //             helm upgrade --install fastapiapp charts --values=values.yml --namespace staging
-                
-    //             echo "=== DEBUG: Node IPs ==="
-    //             kubectl get nodes -o wide
-
-    //             echo "=== DEBUG: Service Info ==="
-    //             kubectl get svc -n staging -o wide 
-    //             '''
-    //         }
-    //     }
-    // }
-
     stage('Deploy to Staging') {
-    environment {
-        KUBECONFIG = credentials("config")
-          }
-          steps {
-              script {
-                  sh '''
-                  rm -Rf .kube
-                  mkdir .kube
-                  cat $KUBECONFIG > .kube/config
-                  cp charts/values-staging.yaml values.yml
-                  sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
-                  helm upgrade --install fastapiapp charts --values=values.yml --namespace staging
+        environment {
+            KUBECONFIG = credentials("config")
+        }
+        steps {
+            script {
+                sh '''
+                rm -Rf .kube
+                mkdir .kube
+                cat $KUBECONFIG > .kube/config
+                cp charts/values-staging.yaml values.yml
+                sed -i "s/tag:.*/tag: ${DOCKER_TAG}/g" values.yml
+                helm upgrade --install fastapiapp charts --values=values.yml --namespace staging
+                
+                echo "=== DEBUG: Node IPs ==="
+                kubectl get nodes -o wide
 
-                  echo "=== DEBUG: Node IPs ==="
-                  kubectl get nodes -o wide
-
-                  echo "=== DEBUG: Service Info ==="
-                  kubectl get svc -n staging -o wide 
-
-                  echo "=== DEBUG: Pod Info ==="
-                  kubectl get pods -n staging -o wide
-
-                  echo "=== DEBUG: Pod Env for movie ==="
-                  kubectl get pods -n staging -l app=fastapiapp-movie -o json | jq '.items[].spec.containers[].env'
-
-                  echo "=== DEBUG: Pod Env for cast ==="
-                  kubectl get pods -n staging -l app=fastapiapp-cast -o json | jq '.items[].spec.containers[].env'
-
-                  echo "=== DEBUG: Pod Logs (movie) ==="
-                  kubectl logs -n staging -l app=fastapiapp-movie --tail=40 || true
-
-                  echo "=== DEBUG: Pod Logs (cast) ==="
-                  kubectl logs -n staging -l app=fastapiapp-cast --tail=40 || true
-
-                  echo "=== DEBUG: Pod Describe (movie) ==="
-                  kubectl describe pods -n staging -l app=fastapiapp-movie || true
-
-                  echo "=== DEBUG: Pod Describe (cast) ==="
-                  kubectl describe pods -n staging -l app=fastapiapp-cast || true
-                  '''
-              }
-          }
-      }
+                echo "=== DEBUG: Service Info ==="
+                kubectl get svc -n staging -o wide 
+                '''
+            }
+        }
+    }
 
     stage('Deploy to Prod') {
       environment {
@@ -207,23 +162,28 @@ pipeline {
     }
   }
   post {
+    // failure {
+    //   catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+    //     mail to: "jhon.castaneda.angulo@gmail.com",
+    //          subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
+    //          body: "See ${env.BUILD_URL}"      
+    //   }
+    // }       
+     
     failure {
       catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-        mail to: "jhon.castaneda.angulo@gmail.com",
-             subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
-             body: "See ${env.BUILD_URL}"      
+      mail to: "jhon.castaneda.angulo@gmail.com",
+         subject: "${env.JOB_NAME} #${env.BUILD_ID} Failed",
+         body: "See ${env.BUILD_URL}"      
+      sh 'docker compose down --remove-orphans --volumes'
+      sh 'docker system prune -a --volumes -f'
+      sh 'docker volume prune -f'
+      sh 'docker network prune -f'
+      sh 'docker container prune -f'
+      sh 'docker ps -a'
+      sh 'docker rmi -f $(docker images -q) 2>/dev/null || true'
+      echo "Cleaning workspace and removing Docker images"
       }
-    }       
-     
-    // always {
-    //   sh 'docker compose down --remove-orphans --volumes'
-    //   sh 'docker system prune -a --volumes -f'
-    //   sh 'docker volume prune -f'
-    //   sh 'docker network prune -f'
-    //   sh 'docker container prune -f'
-    //   sh 'docker ps -a'
-    //   sh 'docker rmi -f $(docker images -q) 2>/dev/null || true'
-    //   echo "Cleaning workspace and removing Docker images"
-    // }
+    }
   }
 }
