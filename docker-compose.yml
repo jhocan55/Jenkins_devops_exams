@@ -33,7 +33,6 @@ services:
       - DATABASE_URI=postgresql://cast_db_username:cast_db_password@cast_db/cast_db_dev
     depends_on:
       - cast_db
-
   cast_db:
     image: postgres:12.1-alpine
     volumes:
