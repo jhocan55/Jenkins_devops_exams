@@ -31,6 +31,8 @@ pipeline {
         sh '''
           docker compose up -d --no-color --wait
           docker compose ps
+          sleep 10
+          docker ps -a
         '''
       }
     }
